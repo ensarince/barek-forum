@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
-import { MessageSquare } from 'lucide-react'
+import { ArrowLeft, MessageSquare } from 'lucide-react'
 import RefreshButton from '@/components/forum/RefreshButton'
 import type { TopicWithMeta, Sector, TopicRead } from '@/types/database'
 
@@ -76,6 +76,10 @@ export default async function SectorPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-4">
+        <ArrowLeft size={12} />
+        Ana Sayfa
+      </Link>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1">
           <div>
@@ -138,6 +142,10 @@ function PreviewSector() {
   ]
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-4">
+        <ArrowLeft size={12} />
+        Ana Sayfa
+      </Link>
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-0.5">Sektör</p>

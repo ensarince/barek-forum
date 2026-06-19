@@ -66,7 +66,7 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
           </button>
         )}
       <Link href="/" className="flex items-center gap-2.5 shrink-0">
-        <Image src={logoSrc} alt="Barek" height={64} width={64} className="h-14 w-auto" />
+        <Image src={logoSrc} alt="Barek" height={80} width={80} className="h-[60px] w-auto" />
         <span className="text-[10px] tracking-[0.2em] uppercase text-[#6b6b6b] hidden sm:block">
           Bouldering Forum
         </span>
