@@ -5,8 +5,8 @@ import { formatDistanceToNow } from '@/lib/utils'
 import PostsList from '@/components/forum/PostsList'
 import PollWidget from '@/components/forum/PollWidget'
 import OpeningPost from '@/components/forum/OpeningPost'
-import { ArrowLeft } from 'lucide-react'
-import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote } from '@/types/database'
+import { ArrowLeft, User } from 'lucide-react'
+import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote, ReactionGroup } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -14,6 +14,32 @@ const SUPABASE_CONFIGURED =
 
 interface PageProps {
   params: Promise<{ topicId: string }>
+}
+
+type RawReaction = {
+  emoji: string
+  user_id: string
+  post_id?: string | null
+  profile: { username: string } | { username: string }[] | null
+}
+
+function getUsername(profile: RawReaction['profile']): string | null {
+  if (!profile) return null
+  if (Array.isArray(profile)) return profile[0]?.username ?? null
+  return profile.username ?? null
+}
+
+function groupReactions(raw: RawReaction[], currentUserId: string): ReactionGroup[] {
+  const map = new Map<string, ReactionGroup>()
+  for (const r of raw) {
+    const g = map.get(r.emoji) ?? { emoji: r.emoji, count: 0, usernames: [], userReacted: false }
+    g.count++
+    const uname = getUsername(r.profile)
+    if (uname) g.usernames.push(uname)
+    if (r.user_id === currentUserId) g.userReacted = true
+    map.set(r.emoji, g)
+  }
+  return Array.from(map.values())
 }
 
 export default async function TopicPage({ params }: PageProps) {
@@ -66,7 +92,7 @@ export default async function TopicPage({ params }: PageProps) {
 
   // Fetch images for all posts
   const postIds = posts.map((p) => p.id)
-  let initialImages: Record<string, ImageRow[]> = {}
+  const initialImages: Record<string, ImageRow[]> = {}
   if (postIds.length > 0) {
     const { data: imagesData } = await supabase
       .from('images')
@@ -97,7 +123,7 @@ export default async function TopicPage({ params }: PageProps) {
     .maybeSingle()
 
   const poll = pollData as Poll | null
-  let pollVotes: Record<string, number> = {}
+  const pollVotes: Record<string, number> = {}
   let userVote: string | null = null
 
   if (poll) {
@@ -119,7 +145,7 @@ export default async function TopicPage({ params }: PageProps) {
     votes: Record<string, number>
     userVote: string | null
   }
-  let initialPostPolls: Record<string, PostPollData> = {}
+  const initialPostPolls: Record<string, PostPollData> = {}
   if (postIds.length > 0) {
     const { data: postPollsData } = await supabase
       .from('polls')
@@ -151,6 +177,35 @@ export default async function TopicPage({ params }: PageProps) {
     }
   }
 
+  // Fetch topic reactions
+  const { data: topicReactionsRaw } = await supabase
+    .from('reactions')
+    .select('emoji, user_id, profile:profiles(username)')
+    .eq('topic_id', topicId)
+    .is('post_id', null)
+  const topicReactions = groupReactions((topicReactionsRaw ?? []) as unknown as RawReaction[], user!.id)
+
+  // Fetch post reactions
+  const initialPostReactions: Record<string, ReactionGroup[]> = {}
+  if (postIds.length > 0) {
+    const { data: postReactionsRaw } = await supabase
+      .from('reactions')
+      .select('emoji, user_id, post_id, profile:profiles(username)')
+      .in('post_id', postIds)
+      .is('topic_id', null)
+    const rawList = (postReactionsRaw ?? []) as unknown as RawReaction[]
+    const byPost = new Map<string, RawReaction[]>()
+    for (const r of rawList) {
+      if (!r.post_id) continue
+      const arr = byPost.get(r.post_id) ?? []
+      arr.push(r)
+      byPost.set(r.post_id, arr)
+    }
+    for (const [pid, arr] of byPost.entries()) {
+      initialPostReactions[pid] = groupReactions(arr, user!.id)
+    }
+  }
+
   // Mark as read
   await supabase
     .from('topic_reads')
@@ -159,7 +214,13 @@ export default async function TopicPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto py-4 sm:py-6 px-4">
       <TopicHeader topic={topic} />
-      <OpeningPost topic={topic} images={topicImages} currentUserId={user!.id} />
+      <OpeningPost
+        topic={topic}
+        images={topicImages}
+        currentUserId={user!.id}
+        currentUsername={profile?.username ?? 'bilinmiyor'}
+        initialReactions={topicReactions}
+      />
       {poll && (
         <PollWidget
           pollId={poll.id}
@@ -173,6 +234,7 @@ export default async function TopicPage({ params }: PageProps) {
         initialPosts={posts}
         initialImages={initialImages}
         initialPostPolls={initialPostPolls}
+        initialPostReactions={initialPostReactions}
         currentUserId={user!.id}
         currentUsername={profile?.username ?? 'bilinmiyor'}
         currentAvatarUrl={profile?.avatar_url ?? null}

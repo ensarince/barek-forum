@@ -19,7 +19,6 @@
 - [x] Topic count next to sector names in sidebar (approved topics per sector, quiet grey number)
 
 ## NEXT
-- add back button when in a topic to main feed
 
 ## FUTURE
 - [ ] Email notifications via Resend — needs a verified domain

@@ -110,6 +110,22 @@ export interface TopicRead {
   last_read_at: string
 }
 
+export interface Reaction {
+  id: string
+  user_id: string
+  emoji: string
+  topic_id: string | null
+  post_id: string | null
+  created_at: string
+}
+
+export interface ReactionGroup {
+  emoji: string
+  count: number
+  usernames: string[]
+  userReacted: boolean
+}
+
 // Query result types (with joins)
 export interface TopicWithMeta extends Topic {
   author: Pick<Profile, 'username' | 'avatar_url'> | null

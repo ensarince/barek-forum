@@ -9,7 +9,8 @@ import ReplyForm from './ReplyForm'
 import PostImages from './PostImages'
 import PollWidget from './PollWidget'
 import { renderContent } from '@/lib/renderContent'
-import type { PostWithAuthor, Image as ImageRow, Poll } from '@/types/database'
+import ReactionBar from './ReactionBar'
+import type { PostWithAuthor, Image as ImageRow, Poll, ReactionGroup } from '@/types/database'
 
 interface PostPollData {
   poll: Poll
@@ -22,6 +23,7 @@ interface PostsListProps {
   initialPosts: PostWithAuthor[]
   initialImages?: Record<string, ImageRow[]>
   initialPostPolls?: Record<string, PostPollData>
+  initialPostReactions?: Record<string, ReactionGroup[]>
   currentUserId: string
   currentUsername: string
   currentAvatarUrl: string | null
@@ -32,6 +34,7 @@ export default function PostsList({
   initialPosts,
   initialImages = {},
   initialPostPolls = {},
+  initialPostReactions = {},
   currentUserId,
   currentUsername,
   currentAvatarUrl,
@@ -39,6 +42,7 @@ export default function PostsList({
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts)
   const [images, setImages] = useState<Record<string, ImageRow[]>>(initialImages)
   const [postPolls, setPostPolls] = useState<Record<string, PostPollData>>(initialPostPolls)
+  const [postReactions] = useState<Record<string, ReactionGroup[]>>(initialPostReactions)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const router = useRouter()
 
@@ -144,7 +148,9 @@ export default function PostsList({
                     post={post}
                     postImages={images[post.id] ?? []}
                     postPoll={postPolls[post.id]}
+                    postReactions={postReactions[post.id] ?? []}
                     currentUserId={currentUserId}
+                    currentUsername={currentUsername}
                     onReply={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
                     isReplying={replyingTo === post.id}
                     onEdit={updatePostContent}
@@ -175,7 +181,9 @@ export default function PostsList({
                             post={reply}
                             postImages={images[reply.id] ?? []}
                             postPoll={postPolls[reply.id]}
+                            postReactions={postReactions[reply.id] ?? []}
                             currentUserId={currentUserId}
+                            currentUsername={currentUsername}
                             onReply={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
                             isReplying={replyingTo === reply.id}
                             onEdit={updatePostContent}
@@ -225,7 +233,9 @@ function PostCard({
   post,
   postImages,
   postPoll,
+  postReactions,
   currentUserId,
+  currentUsername,
   onReply,
   isReplying,
   onEdit,
@@ -236,7 +246,9 @@ function PostCard({
   post: PostWithAuthor
   postImages: ImageRow[]
   postPoll?: PostPollData
+  postReactions: ReactionGroup[]
   currentUserId: string
+  currentUsername: string
   onReply: () => void
   isReplying: boolean
   onEdit: (postId: string, newContent: string) => void
@@ -366,6 +378,17 @@ function PostCard({
             question={postPoll.poll.question}
             initialVotes={postPoll.votes}
             initialUserVote={postPoll.userVote}
+          />
+        </div>
+      )}
+
+      {!editing && (
+        <div className="ml-7 sm:ml-8 mt-2">
+          <ReactionBar
+            targetId={post.id}
+            targetType="post"
+            initialReactions={postReactions}
+            currentUsername={currentUsername}
           />
         </div>
       )}

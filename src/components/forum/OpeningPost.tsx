@@ -5,16 +5,19 @@ import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, User, X } from 'lucide-react'
 import { formatDistanceToNow } from '@/lib/utils'
 import PostImages from './PostImages'
+import ReactionBar from './ReactionBar'
 import { renderContent } from '@/lib/renderContent'
-import type { TopicWithMeta, Image as ImageRow } from '@/types/database'
+import type { TopicWithMeta, Image as ImageRow, ReactionGroup } from '@/types/database'
 
 interface OpeningPostProps {
   topic: TopicWithMeta
   images: ImageRow[]
   currentUserId: string
+  currentUsername: string
+  initialReactions: ReactionGroup[]
 }
 
-export default function OpeningPost({ topic, images, currentUserId }: OpeningPostProps) {
+export default function OpeningPost({ topic, images, currentUserId, currentUsername, initialReactions }: OpeningPostProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(topic.content)
@@ -124,6 +127,17 @@ export default function OpeningPost({ topic, images, currentUserId }: OpeningPos
       )}
 
       {!editing && images.length > 0 && <PostImages images={images} />}
+
+      {!editing && (
+        <div className="mt-3">
+          <ReactionBar
+            targetId={topic.id}
+            targetType="topic"
+            initialReactions={initialReactions}
+            currentUsername={currentUsername}
+          />
+        </div>
+      )}
     </div>
   )
 }
