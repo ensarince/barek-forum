@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import PostsList from '@/components/forum/PostsList'
+import PollWidget from '@/components/forum/PollWidget'
 import { User } from 'lucide-react'
-import type { TopicWithMeta, PostWithAuthor, Profile } from '@/types/database'
+import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -23,16 +24,22 @@ export default async function TopicPage({ params }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: topicData } = await supabase
-    .from('topics')
-    .select(`
-      *,
-      author:profiles!topics_author_id_fkey(username, avatar_url),
-      sector:sectors(name)
-    `)
-    .eq('id', topicId)
-    .eq('status', 'approved')
+  // Check if admin so they can preview pending/rejected topics
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user!.id)
     .single()
+  const isAdmin = (callerProfile as { role: string } | null)?.role === 'admin'
+
+  let topicQuery = supabase
+    .from('topics')
+    .select(`*, author:profiles!topics_author_id_fkey(username, avatar_url), sector:sectors(name)`)
+    .eq('id', topicId)
+
+  if (!isAdmin) topicQuery = topicQuery.eq('status', 'approved')
+
+  const { data: topicData } = await topicQuery.single()
 
   if (!topicData) notFound()
 
@@ -47,6 +54,22 @@ export default async function TopicPage({ params }: PageProps) {
 
   const posts = (postsData ?? []) as PostWithAuthor[]
 
+  // Fetch images for all posts
+  const postIds = posts.map((p) => p.id)
+  let initialImages: Record<string, ImageRow[]> = {}
+  if (postIds.length > 0) {
+    const { data: imagesData } = await supabase
+      .from('images')
+      .select('*')
+      .in('post_id', postIds)
+    const imgs = (imagesData ?? []) as ImageRow[]
+    for (const img of imgs) {
+      if (img.post_id) {
+        initialImages[img.post_id] = [...(initialImages[img.post_id] ?? []), img]
+      }
+    }
+  }
+
   // Fetch current user profile for reply form
   const { data: profileData } = await supabase
     .from('profiles')
@@ -55,6 +78,68 @@ export default async function TopicPage({ params }: PageProps) {
     .single()
 
   const profile = profileData as Pick<Profile, 'id' | 'username' | 'avatar_url'> | null
+
+  // Fetch topic-level poll + votes
+  const { data: pollData } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('topic_id', topicId)
+    .maybeSingle()
+
+  const poll = pollData as Poll | null
+  let pollVotes: Record<string, number> = {}
+  let userVote: string | null = null
+
+  if (poll) {
+    const { data: votesData } = await supabase
+      .from('poll_votes')
+      .select('grade, user_id')
+      .eq('poll_id', poll.id)
+
+    const votes = (votesData ?? []) as Pick<PollVote, 'grade' | 'user_id'>[]
+    for (const v of votes) {
+      pollVotes[v.grade] = (pollVotes[v.grade] ?? 0) + 1
+      if (v.user_id === user!.id) userVote = v.grade
+    }
+  }
+
+  // Fetch post-level polls + votes
+  interface PostPollData {
+    poll: Poll
+    votes: Record<string, number>
+    userVote: string | null
+  }
+  let initialPostPolls: Record<string, PostPollData> = {}
+  if (postIds.length > 0) {
+    const { data: postPollsData } = await supabase
+      .from('polls')
+      .select('*')
+      .in('post_id', postIds)
+
+    const postPollsList = (postPollsData ?? []) as Poll[]
+
+    if (postPollsList.length > 0) {
+      const pollIds = postPollsList.map((p) => p.id)
+      const { data: postPollVotesData } = await supabase
+        .from('poll_votes')
+        .select('grade, user_id, poll_id')
+        .in('poll_id', pollIds)
+
+      const postPollVotes = (postPollVotesData ?? []) as (Pick<PollVote, 'grade' | 'user_id'> & { poll_id: string })[]
+
+      for (const p of postPollsList) {
+        if (!p.post_id) continue
+        const pvotes = postPollVotes.filter((v) => v.poll_id === p.id)
+        const voteCounts: Record<string, number> = {}
+        let uv: string | null = null
+        for (const v of pvotes) {
+          voteCounts[v.grade] = (voteCounts[v.grade] ?? 0) + 1
+          if (v.user_id === user!.id) uv = v.grade
+        }
+        initialPostPolls[p.post_id] = { poll: p, votes: voteCounts, userVote: uv }
+      }
+    }
+  }
 
   // Mark as read
   await supabase
@@ -65,9 +150,19 @@ export default async function TopicPage({ params }: PageProps) {
     <div className="max-w-3xl mx-auto py-6 px-4">
       <TopicHeader topic={topic} />
       <OpeningPost topic={topic} />
+      {poll && (
+        <PollWidget
+          pollId={poll.id}
+          question={poll.question}
+          initialVotes={pollVotes}
+          initialUserVote={userVote}
+        />
+      )}
       <PostsList
         topicId={topicId}
         initialPosts={posts}
+        initialImages={initialImages}
+        initialPostPolls={initialPostPolls}
         currentUserId={user!.id}
         currentUsername={profile?.username ?? 'bilinmiyor'}
         currentAvatarUrl={profile?.avatar_url ?? null}

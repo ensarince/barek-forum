@@ -83,6 +83,22 @@ export interface Notification {
   created_at: string
 }
 
+export interface Poll {
+  id: string
+  topic_id: string | null
+  post_id: string | null
+  question: string
+  created_at: string
+}
+
+export interface PollVote {
+  id: string
+  poll_id: string
+  user_id: string
+  grade: string
+  created_at: string
+}
+
 export interface TopicRead {
   user_id: string
   topic_id: string

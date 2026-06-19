@@ -26,8 +26,6 @@ export async function POST(request: Request) {
         reference_id: null,
         is_read: false,
       })
-      // TODO: send approval email via Resend
-      console.log('[Admin] User approved:', userId)
     }
 
     return NextResponse.json({ success: true })

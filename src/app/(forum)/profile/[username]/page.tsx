@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatMonthYear, formatDistanceToNow } from '@/lib/utils'
 import type { Profile, Topic, Post } from '@/types/database'
@@ -71,10 +72,10 @@ function ProfileView({
   posts: PostSnippet[]
 }) {
   const links = [
-    { label: '8A', href: profile.eight_a_url },
-    { label: '27', href: profile.topo_url },
-    { label: 'IG', href: profile.instagram_url },
-    { label: 'YT', href: profile.youtube_url },
+    { label: '8a.nu', href: profile.eight_a_url },
+    { label: '27crags', href: profile.topo_url },
+    { label: 'Instagram', href: profile.instagram_url },
+    { label: 'YouTube', href: profile.youtube_url },
   ].filter((l) => !!l.href)
 
   return (
@@ -129,8 +130,9 @@ function ProfileView({
                     href={link.href!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-[#6b6b6b] hover:text-white text-sm border border-[#2a2a2a] px-3 py-1.5 hover:border-[#8b1a1a] transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white text-xs border border-[#2a2a2a] px-3 py-1.5 hover:border-[#8b1a1a] transition-colors"
                   >
+                    <ExternalLink size={11} />
                     {link.label}
                   </a>
                 ))}

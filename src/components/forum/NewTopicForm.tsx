@@ -11,6 +11,7 @@ export default function NewTopicForm({ sectors }: NewTopicFormProps) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [sectorId, setSectorId] = useState('')
+  const [withPoll, setWithPoll] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -19,15 +20,15 @@ export default function NewTopicForm({ sectors }: NewTopicFormProps) {
     e.preventDefault()
     setError(null)
 
-    if (title.trim().length < 5) { setError('Başlık en az 5 karakter olmalı.'); return }
-    if (content.trim().length < 50) { setError('İçerik en az 50 karakter olmalı.'); return }
+    if (title.trim().length < 3) { setError('Başlık en az 3 karakter olmalı.'); return }
+    if (!content.trim()) { setError('İçerik boş olamaz.'); return }
     if (!sectorId) { setError('Sektör seçmelisin.'); return }
 
     setLoading(true)
     const res = await fetch('/api/forum/topic', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: title.trim(), content: content.trim(), sector_id: sectorId }),
+      body: JSON.stringify({ title: title.trim(), content: content.trim(), sector_id: sectorId, with_poll: withPoll }),
     })
 
     if (!res.ok) {
@@ -89,10 +90,28 @@ export default function NewTopicForm({ sectors }: NewTopicFormProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={8}
-            placeholder="Konuyu detaylı anlat... (en az 50 karakter)"
+            placeholder="Konuyu detaylı anlat..."
             className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
           />
-          <p className="text-[11px] text-[#6b6b6b] mt-1">{content.trim().length} / min. 50</p>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div
+              onClick={() => setWithPoll(!withPoll)}
+              className={`w-10 h-5 border transition-colors flex items-center shrink-0 ${withPoll ? 'bg-[#8b1a1a] border-[#8b1a1a]' : 'bg-[#0d0d0d] border-[#2a2a2a]'}`}
+            >
+              <div className={`w-3 h-3 bg-white transition-transform mx-1 ${withPoll ? 'translate-x-4' : 'translate-x-0'}`} />
+            </div>
+            <span className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b] group-hover:text-white transition-colors">
+              Derece anketi ekle
+            </span>
+          </label>
+          {withPoll && (
+            <p className="text-[11px] text-[#4a4a4a] mt-1.5 ml-13">
+              Üyeler Fontainebleau skalasında rota derecesini oylarıyla belirler.
+            </p>
+          )}
         </div>
 
         {error && <p className="text-[#c0392b] text-sm">{error}</p>}

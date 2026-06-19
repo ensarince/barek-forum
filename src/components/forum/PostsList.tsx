@@ -5,11 +5,21 @@ import { User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from '@/lib/utils'
 import ReplyForm from './ReplyForm'
-import type { PostWithAuthor } from '@/types/database'
+import PostImages from './PostImages'
+import PollWidget from './PollWidget'
+import type { PostWithAuthor, Image as ImageRow, Poll } from '@/types/database'
+
+interface PostPollData {
+  poll: Poll
+  votes: Record<string, number>
+  userVote: string | null
+}
 
 interface PostsListProps {
   topicId: string
   initialPosts: PostWithAuthor[]
+  initialImages?: Record<string, ImageRow[]>
+  initialPostPolls?: Record<string, PostPollData>
   currentUserId: string
   currentUsername: string
   currentAvatarUrl: string | null
@@ -18,18 +28,31 @@ interface PostsListProps {
 export default function PostsList({
   topicId,
   initialPosts,
+  initialImages = {},
+  initialPostPolls = {},
   currentUserId,
   currentUsername,
   currentAvatarUrl,
 }: PostsListProps) {
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts)
+  const [images, setImages] = useState<Record<string, ImageRow[]>>(initialImages)
+  const [postPolls, setPostPolls] = useState<Record<string, PostPollData>>(initialPostPolls)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
 
-  function addPost(newPost: PostWithAuthor) {
+  function addPost(newPost: PostWithAuthor, newImages: ImageRow[] = [], poll?: Poll | null) {
     setPosts((prev) => {
       if (prev.some((p) => p.id === newPost.id)) return prev
       return [...prev, newPost]
     })
+    if (newImages.length > 0) {
+      setImages((prev) => ({ ...prev, [newPost.id]: newImages }))
+    }
+    if (poll) {
+      setPostPolls((prev) => ({
+        ...prev,
+        [newPost.id]: { poll, votes: {}, userVote: null },
+      }))
+    }
   }
 
   useEffect(() => {
@@ -43,13 +66,11 @@ export default function PostsList({
         async (payload) => {
           const newId = (payload.new as { id: string }).id
 
-          // Skip if already added optimistically
           setPosts((current) => {
             if (current.some((p) => p.id === newId)) return current
             return current
           })
 
-          // Fetch with author join for posts from other users
           const { data } = await supabase
             .from('posts')
             .select('*, author:profiles!posts_author_id_fkey(username, avatar_url)')
@@ -61,6 +82,19 @@ export default function PostsList({
               if (current.some((p) => p.id === newId)) return current
               return [...current, data as PostWithAuthor]
             })
+
+            // Check if this post has a poll (created by another user via Realtime)
+            const { data: pollData } = await supabase
+              .from('polls')
+              .select('*')
+              .eq('post_id', newId)
+              .maybeSingle()
+            if (pollData) {
+              setPostPolls((current) => ({
+                ...current,
+                [newId]: { poll: pollData as Poll, votes: {}, userVote: null },
+              }))
+            }
           }
         }
       )
@@ -93,6 +127,8 @@ export default function PostsList({
                 <div key={post.id}>
                   <PostCard
                     post={post}
+                    postImages={images[post.id] ?? []}
+                    postPoll={postPolls[post.id]}
                     onReply={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
                     isReplying={replyingTo === post.id}
                   />
@@ -105,7 +141,7 @@ export default function PostsList({
                         authorId={currentUserId}
                         authorUsername={currentUsername}
                         authorAvatarUrl={currentAvatarUrl}
-                        onSuccess={(p) => { addPost(p); setReplyingTo(null) }}
+                        onSuccess={(p, imgs, poll) => { addPost(p, imgs, poll); setReplyingTo(null) }}
                         onCancel={() => setReplyingTo(null)}
                         compact
                       />
@@ -118,6 +154,8 @@ export default function PostsList({
                         <div key={reply.id}>
                           <PostCard
                             post={reply}
+                            postImages={images[reply.id] ?? []}
+                            postPoll={postPolls[reply.id]}
                             onReply={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
                             isReplying={replyingTo === reply.id}
                             nested
@@ -130,7 +168,7 @@ export default function PostsList({
                                 authorId={currentUserId}
                                 authorUsername={currentUsername}
                                 authorAvatarUrl={currentAvatarUrl}
-                                onSuccess={(p) => { addPost(p); setReplyingTo(null) }}
+                                onSuccess={(p, imgs, poll) => { addPost(p, imgs, poll); setReplyingTo(null) }}
                                 onCancel={() => setReplyingTo(null)}
                                 compact
                               />
@@ -162,11 +200,15 @@ export default function PostsList({
 
 function PostCard({
   post,
+  postImages,
+  postPoll,
   onReply,
   isReplying,
   nested = false,
 }: {
   post: PostWithAuthor
+  postImages: ImageRow[]
+  postPoll?: PostPollData
   onReply: () => void
   isReplying: boolean
   nested?: boolean
@@ -188,6 +230,19 @@ function PostCard({
       <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-8">
         {post.content}
       </div>
+
+      <PostImages images={postImages} />
+
+      {postPoll && (
+        <div className="mt-3 ml-8">
+          <PollWidget
+            pollId={postPoll.poll.id}
+            question={postPoll.poll.question}
+            initialVotes={postPoll.votes}
+            initialUserVote={postPoll.userVote}
+          />
+        </div>
+      )}
 
       <div className="ml-8 mt-2">
         <button

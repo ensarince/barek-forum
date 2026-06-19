@@ -1,7 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import type { PostWithAuthor } from '@/types/database'
+import { useRef, useState } from 'react'
+import { BarChart2, Smile, X } from 'lucide-react'
+import ImageUpload from './ImageUpload'
+import EmojiPicker from './EmojiPicker'
+import GifPicker from './GifPicker'
+import type { PostWithAuthor, Image as ImageRow, Poll } from '@/types/database'
+
+interface GifItem {
+  id: string
+  title: string
+  previewUrl: string
+  url: string
+}
 
 interface ReplyFormProps {
   topicId: string
@@ -9,7 +20,7 @@ interface ReplyFormProps {
   authorId: string
   authorUsername: string
   authorAvatarUrl: string | null
-  onSuccess: (newPost: PostWithAuthor) => void
+  onSuccess: (newPost: PostWithAuthor, images: ImageRow[], poll?: Poll | null) => void
   onCancel?: () => void
   compact?: boolean
 }
@@ -25,19 +36,69 @@ export default function ReplyForm({
   compact = false,
 }: ReplyFormProps) {
   const [content, setContent] = useState('')
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [pendingGifs, setPendingGifs] = useState<GifItem[]>([])
+  const [withPoll, setWithPoll] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
+  const [showGif, setShowGif] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  function insertEmoji(emoji: string) {
+    const el = textareaRef.current
+    if (!el) { setContent((c) => c + emoji); return }
+    const start = el.selectionStart ?? content.length
+    const end = el.selectionEnd ?? content.length
+    const next = content.slice(0, start) + emoji + content.slice(end)
+    setContent(next)
+    requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(start + emoji.length, start + emoji.length)
+    })
+  }
+
+  function addGif(gif: GifItem) {
+    setPendingGifs((prev) => prev.length < 3 ? [...prev, gif] : prev)
+  }
+
+  function removeGif(id: string) {
+    setPendingGifs((prev) => prev.filter((g) => g.id !== id))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (content.trim().length < 10) {
-      setError('Yanıt en az 10 karakter olmalı.')
+    if (!content.trim()) {
+      setError('Yanıt boş olamaz.')
       return
     }
     setLoading(true)
     setError(null)
+    setUploadStatus(null)
 
     try {
+      // Upload images first
+      const uploadedImages: { url: string; publicId: string }[] = []
+
+      for (let i = 0; i < pendingFiles.length; i++) {
+        setUploadStatus(`Fotoğraflar yükleniyor... (${i + 1}/${pendingFiles.length})`)
+        const fd = new FormData()
+        fd.append('file', pendingFiles[i])
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        const upData = await upRes.json() as { url?: string; publicId?: string; error?: string }
+        if (!upRes.ok) {
+          setError(upData.error ?? 'Fotoğraf yüklenemedi.')
+          return
+        }
+        uploadedImages.push({ url: upData.url!, publicId: upData.publicId! })
+      }
+
+      setUploadStatus(null)
+
+      // Append selected GIFs as image entries (Giphy CDN URLs, no upload needed)
+      const gifImages = pendingGifs.map((g) => ({ url: g.url, publicId: `giphy_${g.id}` }))
+
       const res = await fetch('/api/forum/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,19 +106,20 @@ export default function ReplyForm({
           topic_id: topicId,
           content: content.trim(),
           parent_post_id: parentPostId,
+          images: [...uploadedImages, ...gifImages],
+          with_poll: withPoll,
         }),
       })
 
-      const data = await res.json()
+      const data = await res.json() as { post?: { id: string }; images?: ImageRow[]; poll?: Poll; error?: string }
 
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? 'Bir hata oluştu.')
+        setError(data.error ?? 'Bir hata oluştu.')
         return
       }
 
-      // Build optimistic post object
       const optimisticPost: PostWithAuthor = {
-        id: (data as { post?: { id: string } }).post?.id ?? `tmp-${Date.now()}`,
+        id: data.post?.id ?? `tmp-${Date.now()}`,
         topic_id: topicId,
         author_id: authorId,
         content: content.trim(),
@@ -69,12 +131,16 @@ export default function ReplyForm({
       }
 
       setContent('')
-      onSuccess(optimisticPost)
+      setPendingFiles([])
+      setPendingGifs([])
+      setWithPoll(false)
+      onSuccess(optimisticPost, data.images ?? [], data.poll ?? null)
       onCancel?.()
     } catch {
       setError('Sunucuya bağlanılamadı.')
     } finally {
       setLoading(false)
+      setUploadStatus(null)
     }
   }
 
@@ -84,6 +150,7 @@ export default function ReplyForm({
         <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">Yanıtla</p>
       )}
       <textarea
+        ref={textareaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={compact ? 3 : 4}
@@ -92,24 +159,97 @@ export default function ReplyForm({
         className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
       />
       {error && <p className="text-[#c0392b] text-xs mt-1">{error}</p>}
-      <div className="flex items-center gap-2 justify-end mt-2">
-        {onCancel && (
+      {uploadStatus && <p className="text-[#6b6b6b] text-xs mt-1">{uploadStatus}</p>}
+
+      {/* Pending GIF previews */}
+      {pendingGifs.length > 0 && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {pendingGifs.map((gif) => (
+            <div key={gif.id} className="relative">
+              <img src={gif.previewUrl} alt={gif.title} className="h-16 object-cover border border-[#2a2a2a]" />
+              <button
+                type="button"
+                onClick={() => removeGif(gif.id)}
+                className="absolute -top-1.5 -right-1.5 bg-[#8b1a1a] rounded-full p-0.5"
+              >
+                <X size={10} className="text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 justify-between mt-2">
+        <div className="relative flex items-center gap-2">
+          <ImageUpload onImagesChange={setPendingFiles} maxImages={5} />
+
+          {/* Emoji button */}
           <button
             type="button"
-            onClick={onCancel}
-            className="text-xs text-[#6b6b6b] hover:text-white px-3 py-2 transition-colors"
+            onClick={() => { setShowEmoji(!showEmoji); setShowGif(false) }}
+            title="Emoji ekle"
+            className={`flex items-center gap-1 px-2.5 py-2 border text-xs transition-colors ${
+              showEmoji ? 'border-[#8b1a1a] bg-[#8b1a1a] text-white' : 'border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+            }`}
           >
-            İptal
+            <Smile size={14} />
           </button>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-[#8b1a1a] hover:bg-[#a82020] text-white px-4 py-2 text-sm font-semibold uppercase tracking-widest transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Gönderiliyor...' : 'Yanıtla'}
-        </button>
+          {showEmoji && (
+            <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />
+          )}
+
+          {/* GIF button */}
+          <button
+            type="button"
+            onClick={() => { setShowGif(!showGif); setShowEmoji(false) }}
+            title="GIF ekle"
+            className={`flex items-center px-2.5 py-2 border text-xs font-bold transition-colors ${
+              showGif ? 'border-[#8b1a1a] bg-[#8b1a1a] text-white' : 'border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+            }`}
+          >
+            GIF
+          </button>
+          {showGif && (
+            <GifPicker onSelect={addGif} onClose={() => setShowGif(false)} />
+          )}
+
+          {/* Poll toggle */}
+          <button
+            type="button"
+            onClick={() => setWithPoll(!withPoll)}
+            title="Derece anketi ekle"
+            className={`flex items-center gap-1.5 px-2.5 py-2 border text-xs transition-colors ${
+              withPoll ? 'border-[#8b1a1a] bg-[#8b1a1a] text-white' : 'border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+            }`}
+          >
+            <BarChart2 size={14} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-xs text-[#6b6b6b] hover:text-white px-3 py-2 transition-colors"
+            >
+              İptal
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-[#8b1a1a] hover:bg-[#a82020] text-white px-4 py-2 text-sm font-semibold uppercase tracking-widest transition-colors disabled:opacity-50"
+          >
+            {loading ? (uploadStatus ? '...' : 'Gönderiliyor...') : 'Yanıtla'}
+          </button>
+        </div>
       </div>
+      {withPoll && (
+        <p className="text-[11px] text-[#4a4a4a] mt-1.5">
+          Bu yanıta derece anketi eklenecek — üyeler Font skalasında oy verebilir.
+        </p>
+      )}
     </form>
   )
 }

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { User } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const profileSchema = z.object({
@@ -28,6 +29,40 @@ type PasswordFormData = z.infer<typeof passwordSchema>
 export default function SettingsForm({ profile }: { profile: Profile }) {
   const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [passwordMsg, setPasswordMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarMsg, setAvatarMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    setAvatarMsg(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
+      const upData = await upRes.json() as { url?: string; error?: string }
+      if (!upRes.ok) { setAvatarMsg({ ok: false, text: upData.error ?? 'Yükleme başarısız.' }); return }
+      const saveRes = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: upData.url }),
+      })
+      if (saveRes.ok) {
+        setAvatarUrl(upData.url!)
+        setAvatarMsg({ ok: true, text: 'Fotoğraf güncellendi.' })
+      } else {
+        setAvatarMsg({ ok: false, text: 'Kayıt başarısız.' })
+      }
+    } catch {
+      setAvatarMsg({ ok: false, text: 'Bir hata oluştu.' })
+    } finally {
+      setAvatarUploading(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -83,26 +118,30 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-10">
       <h1 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Ayarlar</h1>
 
-      {/* Avatar placeholder */}
+      {/* Avatar upload */}
       <section className="bg-[#161616] border border-[#2a2a2a] p-6">
         <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-4">Profil Fotoğrafı</h2>
         <div className="flex items-center gap-4">
-          {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile.username} className="w-16 h-16 object-cover border border-[#2a2a2a]" />
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={profile.username} className="w-16 h-16 object-cover border border-[#2a2a2a]" />
           ) : (
             <div className="w-16 h-16 bg-[#1e1e1e] border border-[#2a2a2a] flex items-center justify-center">
-              <span className="text-2xl font-bold text-[#2a2a2a] uppercase">{profile.username[0]}</span>
+              <User size={24} className="text-[#2a2a2a]" />
             </div>
           )}
           <div>
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             <button
-              disabled
-              title="Yakında"
-              className="bg-[#1e1e1e] border border-[#2a2a2a] text-[#6b6b6b] px-4 py-2 text-xs uppercase tracking-widest cursor-not-allowed"
+              type="button"
+              disabled={avatarUploading}
+              onClick={() => avatarInputRef.current?.click()}
+              className="bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e8e8] hover:border-[#8b1a1a] px-4 py-2 text-xs uppercase tracking-widest transition-colors disabled:opacity-50"
             >
-              Fotoğraf Yükle
+              {avatarUploading ? 'Yükleniyor...' : 'Fotoğraf Değiştir'}
             </button>
-            <p className="text-[10px] text-[#6b6b6b] mt-1">Yakında aktif olacak</p>
+            {avatarMsg && (
+              <p className={`text-xs mt-1 ${avatarMsg.ok ? 'text-green-500' : 'text-[#c0392b]'}`}>{avatarMsg.text}</p>
+            )}
           </div>
         </div>
       </section>

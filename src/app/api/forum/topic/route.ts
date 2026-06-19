@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   }
 
-  const body = await request.json() as { title?: string; content?: string; sector_id?: string; type?: string }
-  const { title, content, sector_id, type } = body
+  const body = await request.json() as { title?: string; content?: string; sector_id?: string; type?: string; with_poll?: boolean }
+  const { title, content, sector_id, type, with_poll } = body
 
   const isAnnouncement = type === 'announcement'
 
@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Sadece adminler duyuru paylaşabilir.' }, { status: 403 })
   }
 
-  if (!title || title.trim().length < 5) {
-    return NextResponse.json({ error: 'Başlık en az 5 karakter olmalı.' }, { status: 400 })
+  if (!title || title.trim().length < 3) {
+    return NextResponse.json({ error: 'Başlık en az 3 karakter olmalı.' }, { status: 400 })
   }
-  if (!content || content.trim().length < 10) {
-    return NextResponse.json({ error: 'İçerik en az 10 karakter olmalı.' }, { status: 400 })
+  if (!content || !content.trim()) {
+    return NextResponse.json({ error: 'İçerik boş olamaz.' }, { status: 400 })
   }
   if (!isAnnouncement) {
     if (!sector_id) {
@@ -68,8 +68,11 @@ export async function POST(request: NextRequest) {
 
   const topic = topicData as { id: string }
 
-  if (!isAnnouncement) {
-    console.log(`[NEW TOPIC] Pending approval: ${topic.id} — "${title.trim()}"`)
+  if (with_poll && !isAnnouncement) {
+    await supabase.from('polls').insert({
+      topic_id: topic.id,
+      question: 'Bu rotanın derecesi nedir?',
+    })
   }
 
   return NextResponse.json({ success: true, topicId: topic.id })

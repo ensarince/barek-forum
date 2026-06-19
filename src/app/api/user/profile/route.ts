@@ -25,6 +25,9 @@ export async function PATCH(request: Request) {
   if (typeof body.full_name === 'string') {
     update.full_name = body.full_name.trim() || null
   }
+  if (typeof body.avatar_url === 'string') {
+    update.avatar_url = body.avatar_url.trim() || null
+  }
   for (const field of urlFields) {
     if (typeof body[field] === 'string') {
       update[field] = (body[field] as string).trim() || null

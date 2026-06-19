@@ -1,7 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, LogOut, Settings, User } from 'lucide-react'
+import Image from 'next/image'
+import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Bell, LogOut, Search, Settings, User, X } from 'lucide-react'
+import logoSrc from '@/assets/barek-logo.png'
 import type { Profile } from '@/types/database'
 
 interface TopbarProps {
@@ -10,16 +14,65 @@ interface TopbarProps {
 }
 
 export default function Topbar({ profile, unreadCount }: TopbarProps) {
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+
+  function openSearch() {
+    setSearchOpen(true)
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  function closeSearch() {
+    setSearchOpen(false)
+    setQuery('')
+  }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const q = query.trim()
+    if (!q) return
+    router.push(`/search?q=${encodeURIComponent(q)}`)
+    closeSearch()
+  }
+
   return (
     <header className="h-12 bg-[#111111] border-b border-[#2a2a2a] flex items-center justify-between px-4 shrink-0 z-10">
-      <Link href="/" className="flex items-center gap-3">
-        <span className="text-lg font-black tracking-[0.3em] uppercase text-white">BAREK</span>
+      <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <Image src={logoSrc} alt="Barek" height={48} width={48} className="h-12 w-auto" />
         <span className="text-[10px] tracking-[0.2em] uppercase text-[#6b6b6b] hidden sm:block">
           Bouldering Forum
         </span>
       </Link>
 
+      {/* Expandable search */}
+      {searchOpen && (
+        <form onSubmit={handleSearch} className="flex-1 mx-4 flex items-center gap-2">
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Konu veya yanıt ara..."
+            className="flex-1 bg-[#1e1e1e] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-1.5 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+          />
+          <button type="submit" className="text-[#6b6b6b] hover:text-white transition-colors">
+            <Search size={16} />
+          </button>
+          <button type="button" onClick={closeSearch} className="text-[#6b6b6b] hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </form>
+      )}
+
       <div className="flex items-center gap-4">
+        {/* Search */}
+        {!searchOpen && (
+          <button onClick={openSearch} className="text-[#6b6b6b] hover:text-white transition-colors">
+            <Search size={18} />
+          </button>
+        )}
+
         {/* Notification bell */}
         <Link href="/notifications" className="relative text-[#6b6b6b] hover:text-white transition-colors">
           <Bell size={18} />

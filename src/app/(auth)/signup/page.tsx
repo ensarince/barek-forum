@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import logoSrc from '@/assets/barek-logo.png'
 
 const schema = z.object({
   username: z
@@ -75,8 +77,8 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold tracking-widest uppercase text-white">BAREK</h1>
-          <p className="text-[#6b6b6b] text-sm mt-1 tracking-wider uppercase">Bouldering Forum</p>
+          <Image src={logoSrc} alt="Barek" height={128} width={128} className="h-32 w-auto mx-auto" />
+          <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

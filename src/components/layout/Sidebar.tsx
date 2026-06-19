@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Megaphone, Mountain } from 'lucide-react'
+import { BookOpen, Megaphone } from 'lucide-react'
 import type { Sector } from '@/types/database'
 
 interface SidebarProps {
@@ -47,7 +47,6 @@ export default function Sidebar({ sectors }: SidebarProps) {
             <SidebarLink
               key={sector.id}
               href={`/sectors/${sector.id}`}
-              icon={<Mountain size={14} />}
               label={sector.name}
               active={isActive(`/sectors/${sector.id}`)}
             />
@@ -65,7 +64,7 @@ function SidebarLink({
   active,
 }: {
   href: string
-  icon: React.ReactNode
+  icon?: React.ReactNode
   label: string
   active: boolean
 }) {
@@ -78,7 +77,7 @@ function SidebarLink({
           : 'text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent'
       }`}
     >
-      <span className={active ? 'text-[#c0392b]' : 'text-[#6b6b6b]'}>{icon}</span>
+      {icon && <span className={active ? 'text-[#c0392b]' : 'text-[#6b6b6b]'}>{icon}</span>}
       {label}
     </Link>
   )
