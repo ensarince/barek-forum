@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { User } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Pencil, Trash2, User, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from '@/lib/utils'
 import ReplyForm from './ReplyForm'
@@ -39,6 +40,19 @@ export default function PostsList({
   const [images, setImages] = useState<Record<string, ImageRow[]>>(initialImages)
   const [postPolls, setPostPolls] = useState<Record<string, PostPollData>>(initialPostPolls)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const router = useRouter()
+
+  function updatePostContent(postId: string, newContent: string) {
+    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, content: newContent } : p))
+  }
+
+  function removePost(postId: string) {
+    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_deleted: true, content: '' } : p))
+  }
+
+  function handleTopicDeleted() {
+    router.push('/')
+  }
 
   function addPost(newPost: PostWithAuthor, newImages: ImageRow[] = [], poll?: Poll | null) {
     setPosts((prev) => {
@@ -130,8 +144,12 @@ export default function PostsList({
                     post={post}
                     postImages={images[post.id] ?? []}
                     postPoll={postPolls[post.id]}
+                    currentUserId={currentUserId}
                     onReply={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
                     isReplying={replyingTo === post.id}
+                    onEdit={updatePostContent}
+                    onDelete={removePost}
+                    onTopicDeleted={handleTopicDeleted}
                   />
 
                   {replyingTo === post.id && (
@@ -157,8 +175,12 @@ export default function PostsList({
                             post={reply}
                             postImages={images[reply.id] ?? []}
                             postPoll={postPolls[reply.id]}
+                            currentUserId={currentUserId}
                             onReply={() => setReplyingTo(replyingTo === reply.id ? null : reply.id)}
                             isReplying={replyingTo === reply.id}
+                            onEdit={updatePostContent}
+                            onDelete={removePost}
+                            onTopicDeleted={handleTopicDeleted}
                             nested
                           />
                           {replyingTo === reply.id && (
@@ -203,17 +225,78 @@ function PostCard({
   post,
   postImages,
   postPoll,
+  currentUserId,
   onReply,
   isReplying,
+  onEdit,
+  onDelete,
+  onTopicDeleted,
   nested = false,
 }: {
   post: PostWithAuthor
   postImages: ImageRow[]
   postPoll?: PostPollData
+  currentUserId: string
   onReply: () => void
   isReplying: boolean
+  onEdit: (postId: string, newContent: string) => void
+  onDelete: (postId: string) => void
+  onTopicDeleted: () => void
   nested?: boolean
 }) {
+  const [editing, setEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content)
+  const [editLoading, setEditLoading] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const editRef = useRef<HTMLTextAreaElement>(null)
+  const isOwn = post.author_id === currentUserId
+
+  if (post.is_deleted) {
+    return (
+      <div className={`bg-[#161616] border border-[#2a2a2a] ${nested ? 'p-3' : 'p-3 sm:p-5'}`}>
+        <p className="text-xs text-[#4a4a4a] italic ml-7 sm:ml-8">[silindi]</p>
+      </div>
+    )
+  }
+
+  async function saveEdit() {
+    if (!editContent.trim()) return
+    setEditLoading(true)
+    try {
+      const res = await fetch('/api/forum/reply', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: post.id, content: editContent.trim() }),
+      })
+      if (res.ok) {
+        onEdit(post.id, editContent.trim())
+        setEditing(false)
+      }
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  async function deletePost() {
+    setDeleteLoading(true)
+    try {
+      const res = await fetch('/api/forum/reply', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: post.id }),
+      })
+      if (res.ok) {
+        const data = await res.json() as { topicDeleted?: boolean }
+        onDelete(post.id)
+        if (data.topicDeleted) onTopicDeleted()
+      }
+    } finally {
+      setDeleteLoading(false)
+      setDeleteConfirm(false)
+    }
+  }
+
   return (
     <div className={`bg-[#161616] border border-[#2a2a2a] ${nested ? 'p-3' : 'p-3 sm:p-5'}`}>
       <div className="flex items-center gap-2">
@@ -226,15 +309,57 @@ function PostCard({
         )}
         <span className="text-sm font-medium text-[#e8e8e8]">{post.author?.username ?? 'bilinmiyor'}</span>
         <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(post.created_at)}</span>
+        {isOwn && !editing && (
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={() => { setEditing(true); setEditContent(post.content); setTimeout(() => editRef.current?.focus(), 50) }} className="text-[#4a4a4a] hover:text-[#a0a0a0] transition-colors" title="Düzenle">
+              <Pencil size={12} />
+            </button>
+            {deleteConfirm ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-[#6b6b6b]">Sil?</span>
+                <button onClick={deletePost} disabled={deleteLoading} className="text-[10px] text-red-400 hover:text-red-300 transition-colors disabled:opacity-40">
+                  {deleteLoading ? '...' : 'Evet'}
+                </button>
+                <button onClick={() => setDeleteConfirm(false)} className="text-[10px] text-[#6b6b6b] hover:text-white transition-colors">
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setDeleteConfirm(true)} className="text-[#4a4a4a] hover:text-red-400 transition-colors" title="Sil">
+                <Trash2 size={12} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-7 sm:ml-8">
-        {renderContent(post.content)}
-      </div>
+      {editing ? (
+        <div className="mt-2 ml-7 sm:ml-8">
+          <textarea
+            ref={editRef}
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            rows={3}
+            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a] resize-none"
+          />
+          <div className="flex items-center gap-2 mt-1.5">
+            <button onClick={saveEdit} disabled={editLoading} className="text-xs bg-[#8b1a1a] hover:bg-[#a82020] text-white px-3 py-1.5 transition-colors disabled:opacity-50">
+              {editLoading ? '...' : 'Kaydet'}
+            </button>
+            <button onClick={() => setEditing(false)} className="text-xs text-[#6b6b6b] hover:text-white transition-colors">
+              İptal
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-7 sm:ml-8">
+          {renderContent(post.content)}
+        </div>
+      )}
 
-      <PostImages images={postImages} />
+      {!editing && <PostImages images={postImages} />}
 
-      {postPoll && (
+      {!editing && postPoll && (
         <div className="mt-3 ml-7 sm:ml-8">
           <PollWidget
             pollId={postPoll.poll.id}

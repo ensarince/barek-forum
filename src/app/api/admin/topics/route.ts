@@ -1,6 +1,29 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile, Topic } from '@/types/database'
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { data: callerData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const caller = callerData as Pick<Profile, 'role'> | null
+    if (!caller || caller.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const { topicId } = await request.json() as { topicId: string }
+    if (!topicId) return NextResponse.json({ error: 'Missing topicId' }, { status: 400 })
+
+    await supabase.from('posts').delete().eq('topic_id', topicId)
+    await supabase.from('notifications').delete().eq('reference_id', topicId)
+    await supabase.from('topics').delete().eq('id', topicId)
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
 
 export async function POST(request: Request) {
   try {

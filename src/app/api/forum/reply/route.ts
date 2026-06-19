@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Topic, Post, Image as ImageRow, Poll } from '@/types/database'
+import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -147,4 +147,62 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, post, images: savedImages, poll: savedPoll })
+}
+
+export async function PATCH(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { post_id, content } = await request.json() as { post_id: string; content: string }
+  if (!post_id || !content?.trim()) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+
+  const { data: postData } = await supabase.from('posts').select('author_id').eq('id', post_id).single()
+  const post = postData as Pick<Post, 'author_id'> | null
+  if (!post) return NextResponse.json({ error: 'Yanıt bulunamadı.' }, { status: 404 })
+
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role'> | null
+  if (post.author_id !== user.id && profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
+  }
+
+  await supabase.from('posts').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', post_id)
+  return NextResponse.json({ success: true })
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { post_id } = await request.json() as { post_id: string }
+  if (!post_id) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+
+  const { data: postData } = await supabase.from('posts').select('author_id, topic_id').eq('id', post_id).single()
+  const post = postData as Pick<Post, 'author_id' | 'topic_id'> | null
+  if (!post) return NextResponse.json({ error: 'Yanıt bulunamadı.' }, { status: 404 })
+
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role'> | null
+  if (post.author_id !== user.id && profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
+  }
+
+  await supabase.from('posts').update({ is_deleted: true }).eq('id', post_id)
+
+  // If no remaining posts in this topic, delete the topic too
+  const { count } = await supabase
+    .from('posts')
+    .select('*', { count: 'exact', head: true })
+    .eq('topic_id', post.topic_id)
+    .eq('is_deleted', false)
+
+  if (count === 0) {
+    await supabase.from('notifications').delete().eq('reference_id', post.topic_id)
+    await supabase.from('topics').delete().eq('id', post.topic_id)
+    return NextResponse.json({ success: true, topicDeleted: true })
+  }
+
+  return NextResponse.json({ success: true, topicDeleted: false })
 }
