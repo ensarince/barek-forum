@@ -19,7 +19,7 @@ export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: Sid
   }
 
   return (
-    <aside className="hidden sm:flex w-56 bg-[#111111] border-r border-[#2a2a2a] flex-col shrink-0 overflow-y-auto">
+    <aside className="flex w-56 bg-[#111111] border-r border-[#2a2a2a] flex-col shrink-0 overflow-y-auto">
       {/* Static links */}
       <nav className="p-3 space-y-0.5">
         <SidebarLink href="/rules" icon={<BookOpen size={14} />} label="Kurallar" active={isActive('/rules')} onClick={onLinkClick} />

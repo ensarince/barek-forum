@@ -27,7 +27,9 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar — hidden on mobile */}
-        <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
+        <div className="hidden sm:flex shrink-0">
+          <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
+        </div>
 
         {/* Mobile drawer overlay */}
         {menuOpen && (
