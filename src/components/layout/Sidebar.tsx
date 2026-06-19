@@ -8,9 +8,10 @@ import type { Sector } from '@/types/database'
 interface SidebarProps {
   sectors: Sector[]
   sectorCounts?: Record<string, number>
+  onLinkClick?: () => void
 }
 
-export default function Sidebar({ sectors, sectorCounts = {} }: SidebarProps) {
+export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: SidebarProps) {
   const pathname = usePathname()
 
   function isActive(href: string) {
@@ -18,21 +19,11 @@ export default function Sidebar({ sectors, sectorCounts = {} }: SidebarProps) {
   }
 
   return (
-    <aside className="w-56 bg-[#111111] border-r border-[#2a2a2a] flex flex-col shrink-0 overflow-y-auto">
+    <aside className="hidden sm:flex w-56 bg-[#111111] border-r border-[#2a2a2a] flex-col shrink-0 overflow-y-auto">
       {/* Static links */}
       <nav className="p-3 space-y-0.5">
-        <SidebarLink
-          href="/rules"
-          icon={<BookOpen size={14} />}
-          label="Kurallar"
-          active={isActive('/rules')}
-        />
-        <SidebarLink
-          href="/announcements"
-          icon={<Megaphone size={14} />}
-          label="Duyurular"
-          active={isActive('/announcements')}
-        />
+        <SidebarLink href="/rules" icon={<BookOpen size={14} />} label="Kurallar" active={isActive('/rules')} onClick={onLinkClick} />
+        <SidebarLink href="/announcements" icon={<Megaphone size={14} />} label="Duyurular" active={isActive('/announcements')} onClick={onLinkClick} />
       </nav>
 
       {/* Divider */}
@@ -40,9 +31,7 @@ export default function Sidebar({ sectors, sectorCounts = {} }: SidebarProps) {
 
       {/* Sectors */}
       <div className="p-3">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-[#6b6b6b] mb-2 px-2">
-          Sektörler
-        </p>
+        <p className="text-[10px] uppercase tracking-[0.15em] text-[#6b6b6b] mb-2 px-2">Sektörler</p>
         <nav className="space-y-0.5">
           {sectors.map((sector) => (
             <SidebarLink
@@ -51,6 +40,7 @@ export default function Sidebar({ sectors, sectorCounts = {} }: SidebarProps) {
               label={sector.name}
               count={sectorCounts[sector.id]}
               active={isActive(`/sectors/${sector.id}`)}
+              onClick={onLinkClick}
             />
           ))}
         </nav>
@@ -65,16 +55,19 @@ function SidebarLink({
   label,
   count,
   active,
+  onClick,
 }: {
   href: string
   icon?: React.ReactNode
   label: string
   count?: number
   active: boolean
+  onClick?: () => void
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center gap-2.5 px-2 py-1.5 text-sm transition-colors ${
         active
           ? 'text-white bg-[#1e1e1e] border-l-2 border-[#8b1a1a]'

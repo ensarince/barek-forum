@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Sidebar from '@/components/layout/Sidebar'
-import Topbar from '@/components/layout/Topbar'
+import ForumShell from '@/components/layout/ForumShell'
 import type { Profile, Sector } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -33,15 +32,14 @@ const PREVIEW_SECTORS: Sector[] = [
 export default async function ForumLayout({ children }: { children: React.ReactNode }) {
   if (!SUPABASE_CONFIGURED) {
     return (
-      <div className="flex flex-col h-screen">
-        <Topbar profile={PREVIEW_PROFILE} unreadCount={3} />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar sectors={PREVIEW_SECTORS} />
-          <main className="flex-1 overflow-y-auto bg-background">
-            {children}
-          </main>
-        </div>
-      </div>
+      <ForumShell
+        profile={PREVIEW_PROFILE}
+        unreadCount={3}
+        sectors={PREVIEW_SECTORS}
+        sectorCounts={{}}
+      >
+        {children}
+      </ForumShell>
     )
   }
 
@@ -87,14 +85,13 @@ export default async function ForumLayout({ children }: { children: React.ReactN
     .eq('is_read', false)
 
   return (
-    <div className="flex flex-col h-screen">
-      <Topbar profile={profile} unreadCount={unreadNotifications ?? 0} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
-        <main className="flex-1 overflow-y-auto bg-background">
-          {children}
-        </main>
-      </div>
-    </div>
+    <ForumShell
+      profile={profile}
+      unreadCount={unreadNotifications ?? 0}
+      sectors={sectors}
+      sectorCounts={sectorCounts}
+    >
+      {children}
+    </ForumShell>
   )
 }

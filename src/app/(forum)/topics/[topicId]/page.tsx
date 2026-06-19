@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
@@ -5,7 +6,7 @@ import PostsList from '@/components/forum/PostsList'
 import PollWidget from '@/components/forum/PollWidget'
 import PostImages from '@/components/forum/PostImages'
 import { renderContent } from '@/lib/renderContent'
-import { User } from 'lucide-react'
+import { ArrowLeft, User } from 'lucide-react'
 import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -157,7 +158,7 @@ export default async function TopicPage({ params }: PageProps) {
     .upsert({ user_id: user!.id, topic_id: topicId, last_read_at: new Date().toISOString() })
 
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4">
+    <div className="max-w-3xl mx-auto py-4 sm:py-6 px-4">
       <TopicHeader topic={topic} />
       <OpeningPost topic={topic} images={topicImages} />
       {poll && (
@@ -182,8 +183,13 @@ export default async function TopicPage({ params }: PageProps) {
 }
 
 function TopicHeader({ topic }: { topic: TopicWithMeta }) {
+  const backHref = topic.sector_id ? `/sectors/${topic.sector_id}` : '/'
   return (
-    <div className="mb-6">
+    <div className="mb-4 sm:mb-6">
+      <Link href={backHref} className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-3">
+        <ArrowLeft size={12} />
+        {topic.sector ? topic.sector.name : 'Ana Sayfa'}
+      </Link>
       <div className="flex items-center gap-2 mb-2">
         {topic.type === 'announcement' && (
           <span className="text-[9px] uppercase tracking-widest bg-[#8b1a1a] text-white px-1.5 py-0.5">Duyuru</span>
@@ -208,7 +214,7 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
 
 function OpeningPost({ topic, images }: { topic: TopicWithMeta; images: ImageRow[] }) {
   return (
-    <div className="bg-[#161616] border border-[#2a2a2a] p-5 mb-6">
+    <div className="bg-[#161616] border border-[#2a2a2a] p-3 sm:p-5 mb-6">
       <div className="flex items-center gap-2.5">
         {topic.author?.avatar_url ? (
           <img src={topic.author.avatar_url} alt="" className="w-7 h-7 object-cover border border-[#2a2a2a]" />

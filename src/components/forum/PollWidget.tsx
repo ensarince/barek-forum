@@ -43,7 +43,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
   const maxVotes = Math.max(...Object.values(votes), 1)
 
   return (
-    <div className="bg-[#161616] border border-[#2a2a2a] p-5 mb-6">
+    <div className="bg-[#161616] border border-[#2a2a2a] p-3 sm:p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">{question}</p>
         <span className="text-[11px] text-[#4a4a4a]">{total} oy</span>

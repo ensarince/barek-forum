@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, LogOut, Search, Settings, User, X } from 'lucide-react'
+import { Bell, LogOut, Menu, Search, Settings, User, X } from 'lucide-react'
 import logoSrc from '@/assets/barek-logo.png'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
@@ -12,9 +12,10 @@ import type { Profile } from '@/types/database'
 interface TopbarProps {
   profile: Profile
   unreadCount: number
+  onMenuClick?: () => void
 }
 
-export default function Topbar({ profile, unreadCount }: TopbarProps) {
+export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [bellCount, setBellCount] = useState(unreadCount)
@@ -54,12 +55,23 @@ export default function Topbar({ profile, unreadCount }: TopbarProps) {
 
   return (
     <header className="h-12 bg-[#111111] border-b border-[#2a2a2a] flex items-center justify-between px-4 shrink-0 z-10">
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="sm:hidden text-[#6b6b6b] hover:text-white transition-colors"
+          >
+            <Menu size={18} />
+          </button>
+        )}
       <Link href="/" className="flex items-center gap-2.5 shrink-0">
         <Image src={logoSrc} alt="Barek" height={48} width={48} className="h-12 w-auto" />
         <span className="text-[10px] tracking-[0.2em] uppercase text-[#6b6b6b] hidden sm:block">
           Bouldering Forum
         </span>
       </Link>
+      </div>
 
       {/* Expandable search */}
       {searchOpen && (

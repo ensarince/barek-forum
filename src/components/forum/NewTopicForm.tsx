@@ -106,7 +106,7 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-6 px-4">
+    <div className="max-w-2xl mx-auto py-4 sm:py-6 px-4">
       <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Yeni Konu</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">

@@ -135,7 +135,7 @@ export default function PostsList({
                   />
 
                   {replyingTo === post.id && (
-                    <div className="ml-9 mt-1 mb-2">
+                    <div className="ml-6 sm:ml-9 mt-1 mb-2">
                       <ReplyForm
                         topicId={topicId}
                         parentPostId={post.id}
@@ -150,7 +150,7 @@ export default function PostsList({
                   )}
 
                   {replies.length > 0 && (
-                    <div className="ml-9 border-l-2 border-[#2a2a2a] pl-4 mt-1 space-y-1">
+                    <div className="ml-6 sm:ml-9 border-l-2 border-[#2a2a2a] pl-3 sm:pl-4 mt-1 space-y-1">
                       {replies.map((reply) => (
                         <div key={reply.id}>
                           <PostCard
@@ -215,7 +215,7 @@ function PostCard({
   nested?: boolean
 }) {
   return (
-    <div className={`bg-[#161616] border border-[#2a2a2a] ${nested ? 'p-3' : 'p-5'}`}>
+    <div className={`bg-[#161616] border border-[#2a2a2a] ${nested ? 'p-3' : 'p-3 sm:p-5'}`}>
       <div className="flex items-center gap-2">
         {post.author?.avatar_url ? (
           <img src={post.author.avatar_url} alt="" className="w-6 h-6 object-cover border border-[#2a2a2a] shrink-0" />
@@ -228,14 +228,14 @@ function PostCard({
         <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(post.created_at)}</span>
       </div>
 
-      <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-8">
+      <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-7 sm:ml-8">
         {renderContent(post.content)}
       </div>
 
       <PostImages images={postImages} />
 
       {postPoll && (
-        <div className="mt-3 ml-8">
+        <div className="mt-3 ml-7 sm:ml-8">
           <PollWidget
             pollId={postPoll.poll.id}
             question={postPoll.poll.question}
@@ -245,7 +245,7 @@ function PostCard({
         </div>
       )}
 
-      <div className="ml-8 mt-2">
+      <div className="ml-7 sm:ml-8 mt-2">
         <button
           onClick={onReply}
           className={`text-xs transition-colors ${isReplying ? 'text-[#c0392b]' : 'text-[#6b6b6b] hover:text-white'}`}

@@ -19,7 +19,7 @@ export default function PostImages({ images }: PostImagesProps) {
 
   return (
     <>
-      <div className="mt-3 ml-8 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+      <div className="mt-3 ml-7 sm:ml-8 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
         {visible.map((img, i) => (
           <button
             key={img.id}
