@@ -39,7 +39,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
               onClick={() => setMenuOpen(false)}
             />
             <div className="absolute left-0 top-0 h-full w-64 bg-[#111111] border-r border-[#2a2a2a] flex flex-col overflow-y-auto">
-              <div className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] shrink-0">
+              <div className="flex items-center justify-between px-4 h-16 border-b border-[#2a2a2a] shrink-0">
                 <span className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b]">Menü</span>
                 <button
                   onClick={() => setMenuOpen(false)}

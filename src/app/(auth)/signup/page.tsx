@@ -77,7 +77,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <Image src={logoSrc} alt="Barek" height={128} width={128} className="h-32 w-auto mx-auto" />
+          <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
           <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
 

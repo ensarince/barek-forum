@@ -54,7 +54,7 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
   }
 
   return (
-    <header className="h-12 bg-[#111111] border-b border-[#2a2a2a] flex items-center justify-between px-4 shrink-0 z-10">
+    <header className="h-16 bg-[#111111] border-b border-[#2a2a2a] flex items-center justify-between px-4 shrink-0 z-10">
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
         {onMenuClick && (
@@ -66,7 +66,7 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
           </button>
         )}
       <Link href="/" className="flex items-center gap-2.5 shrink-0">
-        <Image src={logoSrc} alt="Barek" height={48} width={48} className="h-12 w-auto" />
+        <Image src={logoSrc} alt="Barek" height={64} width={64} className="h-14 w-auto" />
         <span className="text-[10px] tracking-[0.2em] uppercase text-[#6b6b6b] hidden sm:block">
           Bouldering Forum
         </span>
