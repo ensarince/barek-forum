@@ -84,7 +84,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
                 </span>
                 <div className="flex-1 h-4 bg-[#0d0d0d] border border-[#2a2a2a] overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-300 ${isVoted ? 'bg-[#8b1a1a]' : 'bg-[#2a2a2a]'}`}
+                    className={`h-full transition-all duration-300 ${isVoted ? 'bg-[#c0392b]' : 'bg-[#8b1a1a]'}`}
                     style={{ width: `${barWidth}%` }}
                   />
                 </div>

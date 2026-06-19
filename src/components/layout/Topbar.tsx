@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, LogOut, Search, Settings, User, X } from 'lucide-react'
 import logoSrc from '@/assets/barek-logo.png'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
 interface TopbarProps {
@@ -16,8 +17,22 @@ interface TopbarProps {
 export default function Topbar({ profile, unreadCount }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [bellCount, setBellCount] = useState(unreadCount)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`notif:${profile.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },
+        () => setBellCount((c) => c + 1)
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [profile.id])
 
   function openSearch() {
     setSearchOpen(true)
@@ -74,11 +89,15 @@ export default function Topbar({ profile, unreadCount }: TopbarProps) {
         )}
 
         {/* Notification bell */}
-        <Link href="/notifications" className="relative text-[#6b6b6b] hover:text-white transition-colors">
-          <Bell size={18} />
-          {unreadCount > 0 && (
+        <Link
+          href="/notifications"
+          onClick={() => setBellCount(0)}
+          className="relative text-[#6b6b6b] hover:text-white transition-colors"
+        >
+          <Bell size={18} className={bellCount > 0 ? 'text-white' : ''} />
+          {bellCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 bg-[#8b1a1a] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {bellCount > 9 ? '9+' : bellCount}
             </span>
           )}
         </Link>

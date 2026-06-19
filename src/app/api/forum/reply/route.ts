@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
   }
   const { topic_id, content, parent_post_id = null, images, with_poll } = body
 
-  if (!content || !content.trim()) {
+  const hasImages = images && images.length > 0
+  if (!hasImages && (!content || !content.trim())) {
     return NextResponse.json({ error: 'Yanıt boş olamaz.' }, { status: 400 })
   }
   if (!topic_id) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     .insert({
       topic_id,
       author_id: user.id,
-      content: content.trim(),
+      content: content?.trim() ?? '',
       parent_post_id: parent_post_id ?? null,
       is_deleted: false,
     })
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
   const mentionRe = /(?<!\w)@([a-zA-Z0-9_]+)/g
   const mentionedUsernames: string[] = []
   let m: RegExpExecArray | null
-  while ((m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
+  while (content && (m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
   const uniqueUsernames = [...new Set(mentionedUsernames)]
 
   if (uniqueUsernames.length > 0) {

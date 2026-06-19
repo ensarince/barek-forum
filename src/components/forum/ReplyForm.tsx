@@ -5,7 +5,13 @@ import { BarChart2, Smile, X } from 'lucide-react'
 import ImageUpload from './ImageUpload'
 import EmojiPicker from './EmojiPicker'
 import GifPicker from './GifPicker'
+import MentionDropdown from './MentionDropdown'
 import type { PostWithAuthor, Image as ImageRow, Poll } from '@/types/database'
+
+interface MentionUser {
+  username: string
+  avatar_url: string | null
+}
 
 interface GifItem {
   id: string
@@ -44,7 +50,11 @@ export default function ReplyForm({
   const [loading, setLoading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([])
+  const [mentionLoading, setMentionLoading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const mentionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function insertEmoji(emoji: string) {
     const el = textareaRef.current
@@ -59,6 +69,55 @@ export default function ReplyForm({
     })
   }
 
+  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value
+    setContent(val)
+    const cursor = e.target.selectionStart ?? val.length
+    const textBefore = val.slice(0, cursor)
+    const match = textBefore.match(/(?:^|[\s\n])@(\w*)$/)
+    if (match) {
+      const query = match[1]
+      setMentionQuery(query)
+      if (mentionDebounceRef.current) clearTimeout(mentionDebounceRef.current)
+      mentionDebounceRef.current = setTimeout(async () => {
+        setMentionLoading(true)
+        try {
+          const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+          const data = await res.json() as { users: MentionUser[] }
+          setMentionUsers(data.users ?? [])
+        } catch {
+          setMentionUsers([])
+        } finally {
+          setMentionLoading(false)
+        }
+      }, 150)
+    } else {
+      setMentionQuery(null)
+      setMentionUsers([])
+    }
+  }
+
+  function insertMention(username: string) {
+    const el = textareaRef.current
+    if (!el) return
+    const cursor = el.selectionStart ?? content.length
+    const textBefore = content.slice(0, cursor)
+    const match = textBefore.match(/(?:^|[\s\n])@(\w*)$/)
+    if (!match) return
+    const atIndex = match.index! + (match[0].startsWith('@') ? 0 : 1)
+    const before = content.slice(0, atIndex)
+    const after = content.slice(cursor)
+    const newContent = before + `@${username} ` + after
+    setContent(newContent)
+    setMentionQuery(null)
+    setMentionUsers([])
+    const newCursor = atIndex + username.length + 2
+    requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(newCursor, newCursor)
+    })
+  }
+
   function addGif(gif: GifItem) {
     setPendingGifs((prev) => prev.length < 3 ? [...prev, gif] : prev)
   }
@@ -69,7 +128,7 @@ export default function ReplyForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!content.trim()) {
+    if (!content.trim() && pendingFiles.length === 0 && pendingGifs.length === 0) {
       setError('Yanıt boş olamaz.')
       return
     }
@@ -149,15 +208,30 @@ export default function ReplyForm({
       {!compact && (
         <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">Yanıtla</p>
       )}
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={compact ? 3 : 4}
-        placeholder="Yanıtını yaz..."
-        autoFocus={compact}
-        className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
-      />
+      <div className="relative">
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleContentChange}
+          onKeyDown={(e) => {
+            if (mentionQuery !== null && e.key === 'Escape') {
+              setMentionQuery(null)
+              setMentionUsers([])
+            }
+          }}
+          rows={compact ? 3 : 4}
+          placeholder="Yanıtını yaz..."
+          autoFocus={compact}
+          className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
+        />
+        {mentionQuery !== null && (
+          <MentionDropdown
+            users={mentionUsers}
+            loading={mentionLoading}
+            onSelect={insertMention}
+          />
+        )}
+      </div>
       {error && <p className="text-[#c0392b] text-xs mt-1">{error}</p>}
       {uploadStatus && <p className="text-[#6b6b6b] text-xs mt-1">{uploadStatus}</p>}
 

@@ -18,6 +18,15 @@
 - [x] Logo as favicon — src/app/icon.png auto-detected by Next.js App Router
 
 - [x] Topic count next to sector names in sidebar (approved topics per sector, quiet grey number)
+- [x] Admin/user notifications — topic_pending, user_pending, reply_received, reply_to_post, mention_received
+- [x] @mention highlighting in red in post content
+- [x] GIF picker trending loads instantly on open (no typing required)
+- [x] Admin topic auto-approval — admins bypass pending flow, redirect directly to their new topic
+- [x] Tag system — optional chip-based Etiket selector (general tags + sector chips) on new topic
+- [x] Live notification bell — Supabase Realtime subscription, bell lights up without page refresh
+- [x] @mention autocomplete — type @ in reply box to search and tag users, inserts @username
+- [x] Poll bar chart — all bars colored (red), user's own vote highlighted brighter
+- [x] Send reply with only a GIF or image (no text required)
 
 ## NEXT
 
