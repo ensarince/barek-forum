@@ -4,9 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import PostsList from '@/components/forum/PostsList'
 import PollWidget from '@/components/forum/PollWidget'
-import PostImages from '@/components/forum/PostImages'
-import { renderContent } from '@/lib/renderContent'
-import { ArrowLeft, User } from 'lucide-react'
+import OpeningPost from '@/components/forum/OpeningPost'
+import { ArrowLeft } from 'lucide-react'
 import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -160,7 +159,7 @@ export default async function TopicPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto py-4 sm:py-6 px-4">
       <TopicHeader topic={topic} />
-      <OpeningPost topic={topic} images={topicImages} />
+      <OpeningPost topic={topic} images={topicImages} currentUserId={user!.id} />
       {poll && (
         <PollWidget
           pollId={poll.id}
@@ -212,25 +211,6 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
   )
 }
 
-function OpeningPost({ topic, images }: { topic: TopicWithMeta; images: ImageRow[] }) {
-  return (
-    <div className="bg-[#161616] border border-[#2a2a2a] p-3 sm:p-5 mb-6">
-      <div className="flex items-center gap-2.5">
-        {topic.author?.avatar_url ? (
-          <img src={topic.author.avatar_url} alt="" className="w-7 h-7 object-cover border border-[#2a2a2a]" />
-        ) : (
-          <div className="w-7 h-7 bg-[#2a2a2a] flex items-center justify-center shrink-0">
-            <User size={14} className="text-[#6b6b6b]" />
-          </div>
-        )}
-        <span className="text-sm font-medium text-[#e8e8e8]">{topic.author?.username ?? 'bilinmiyor'}</span>
-        <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(topic.created_at)}</span>
-      </div>
-      <div className="mt-3 text-sm text-[#e8e8e8] leading-relaxed whitespace-pre-wrap">{renderContent(topic.content)}</div>
-      {images.length > 0 && <PostImages images={images} />}
-    </div>
-  )
-}
 
 const PREVIEW_POSTS: PostWithAuthor[] = [
   { id: '1', topic_id: 'preview', author_id: 'a1', content: 'Ben de aynı rotayı denedim, başlangıç tutuşu gerçekten zor. Sağ el için daha iyi pozisyon buldum.', parent_post_id: null, is_deleted: false, created_at: new Date(Date.now() - 3600000).toISOString(), updated_at: new Date().toISOString(), author: { username: 'ayse_kaya', avatar_url: null } },

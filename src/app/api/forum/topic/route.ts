@@ -110,3 +110,49 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ success: true, topicId: topic.id, images: savedImages })
 }
+
+export async function PATCH(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { topic_id, content } = await request.json() as { topic_id: string; content: string }
+  if (!topic_id || !content?.trim()) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+
+  const { data: topicData } = await supabase.from('topics').select('author_id').eq('id', topic_id).single()
+  const topic = topicData as { author_id: string } | null
+  if (!topic) return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
+
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role'> | null
+  if (topic.author_id !== user.id && profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
+  }
+
+  await supabase.from('topics').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', topic_id)
+  return NextResponse.json({ success: true })
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { topic_id } = await request.json() as { topic_id: string }
+  if (!topic_id) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+
+  const { data: topicData } = await supabase.from('topics').select('author_id').eq('id', topic_id).single()
+  const topic = topicData as { author_id: string } | null
+  if (!topic) return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
+
+  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role'> | null
+  if (topic.author_id !== user.id && profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
+  }
+
+  await supabase.from('posts').delete().eq('topic_id', topic_id)
+  await supabase.from('notifications').delete().eq('reference_id', topic_id)
+  await supabase.from('topics').delete().eq('id', topic_id)
+  return NextResponse.json({ success: true })
+}
