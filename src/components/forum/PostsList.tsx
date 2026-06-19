@@ -7,6 +7,7 @@ import { formatDistanceToNow } from '@/lib/utils'
 import ReplyForm from './ReplyForm'
 import PostImages from './PostImages'
 import PollWidget from './PollWidget'
+import { renderContent } from '@/lib/renderContent'
 import type { PostWithAuthor, Image as ImageRow, Poll } from '@/types/database'
 
 interface PostPollData {
@@ -228,7 +229,7 @@ function PostCard({
       </div>
 
       <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-8">
-        {post.content}
+        {renderContent(post.content)}
       </div>
 
       <PostImages images={postImages} />

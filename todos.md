@@ -13,6 +13,11 @@
 - [x] Admin can preview pending/rejected topics without 404
 - [x] Emoji picker in replies — Smile button, 80 emojis in 4 categories, inserts at cursor
 - [x] GIF picker in replies — GIF button, Giphy API proxied server-side, 24 results grid
+- [x] Refresh button on feed and sector pages (↻ icon beside heading, calls router.refresh())
+- [x] Images in topic opening post — ImageUpload below Açıklama textarea
+- [x] Logo as favicon — src/app/icon.png auto-detected by Next.js App Router
+
+- [x] Topic count next to sector names in sidebar (approved topics per sector, quiet grey number)
 
 ## NEXT
 

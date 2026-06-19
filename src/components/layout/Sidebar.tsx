@@ -7,9 +7,10 @@ import type { Sector } from '@/types/database'
 
 interface SidebarProps {
   sectors: Sector[]
+  sectorCounts?: Record<string, number>
 }
 
-export default function Sidebar({ sectors }: SidebarProps) {
+export default function Sidebar({ sectors, sectorCounts = {} }: SidebarProps) {
   const pathname = usePathname()
 
   function isActive(href: string) {
@@ -48,6 +49,7 @@ export default function Sidebar({ sectors }: SidebarProps) {
               key={sector.id}
               href={`/sectors/${sector.id}`}
               label={sector.name}
+              count={sectorCounts[sector.id]}
               active={isActive(`/sectors/${sector.id}`)}
             />
           ))}
@@ -61,11 +63,13 @@ function SidebarLink({
   href,
   icon,
   label,
+  count,
   active,
 }: {
   href: string
   icon?: React.ReactNode
   label: string
+  count?: number
   active: boolean
 }) {
   return (
@@ -78,7 +82,10 @@ function SidebarLink({
       }`}
     >
       {icon && <span className={active ? 'text-[#c0392b]' : 'text-[#6b6b6b]'}>{icon}</span>}
-      {label}
+      <span className="flex-1 truncate">{label}</span>
+      {count !== undefined && count > 0 && (
+        <span className="text-[10px] text-[#4a4a4a] shrink-0">{count}</span>
+      )}
     </Link>
   )
 }

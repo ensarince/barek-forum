@@ -9,11 +9,15 @@ const SUPABASE_CONFIGURED =
 
 function notifLabel(type: NotificationType): string {
   switch (type) {
-    case 'topic_approved': return 'Konun onaylandı'
-    case 'topic_rejected': return 'Konun reddedildi'
-    case 'user_approved': return 'Üyeliğin onaylandı'
-    case 'reply_received': return 'Konuna yeni yanıt geldi'
+    case 'topic_approved':    return 'Konun onaylandı'
+    case 'topic_rejected':    return 'Konun reddedildi'
+    case 'user_approved':     return 'Üyeliğin onaylandı'
+    case 'reply_received':    return 'Konuna yeni yanıt geldi'
+    case 'reply_to_post':     return 'Yanıtına yeni cevap geldi'
+    case 'mention_received':  return 'Bir konuda etiketlendin'
     case 'announcement_posted': return 'Yeni duyuru yayınlandı'
+    case 'topic_pending':     return 'Yeni konu onay bekliyor'
+    case 'user_pending':      return 'Yeni üye onay bekliyor'
   }
 }
 
@@ -53,7 +57,11 @@ function NotifList({ notifs }: { notifs: Notification[] }) {
       <div className="divide-y divide-[#2a2a2a]">
         {notifs.map((n) => {
           const href = n.reference_id
-            ? (n.type === 'reply_received' || n.type === 'topic_approved' || n.type === 'topic_rejected')
+            ? n.type === 'topic_pending'
+              ? `/topics/${n.reference_id}`
+              : n.type === 'user_pending'
+              ? '/admin/users'
+              : (n.type === 'reply_received' || n.type === 'reply_to_post' || n.type === 'mention_received' || n.type === 'topic_approved' || n.type === 'topic_rejected')
               ? `/topics/${n.reference_id}`
               : '/'
             : '/'

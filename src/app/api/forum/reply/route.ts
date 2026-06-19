@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
     .from('topic_reads')
     .upsert({ user_id: user.id, topic_id, last_read_at: new Date().toISOString() })
 
+  // Notify topic author of any new reply
   if (topic.author_id !== user.id) {
     await supabase.from('notifications').insert({
       user_id: topic.author_id,
@@ -96,6 +97,52 @@ export async function POST(request: NextRequest) {
       reference_id: topic_id,
       is_read: false,
     })
+  }
+
+  // Notify parent post author when this is a direct reply to their post
+  // (skip if they are already the topic author — they got reply_received above)
+  if (parent_post_id) {
+    const { data: parentData } = await supabase
+      .from('posts')
+      .select('author_id')
+      .eq('id', parent_post_id)
+      .single()
+    const parentAuthorId = (parentData as { author_id: string } | null)?.author_id
+    if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
+      await supabase.from('notifications').insert({
+        user_id: parentAuthorId,
+        type: 'reply_to_post',
+        reference_id: topic_id,
+        is_read: false,
+      })
+    }
+  }
+
+  // Notify @mentioned users
+  const mentionRe = /(?<!\w)@([a-zA-Z0-9_]+)/g
+  const mentionedUsernames: string[] = []
+  let m: RegExpExecArray | null
+  while ((m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
+  const uniqueUsernames = [...new Set(mentionedUsernames)]
+
+  if (uniqueUsernames.length > 0) {
+    const { data: mentionedProfiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('username', uniqueUsernames)
+    const mentionIds = ((mentionedProfiles ?? []) as { id: string }[])
+      .map((p) => p.id)
+      .filter((id) => id !== user.id)
+    if (mentionIds.length > 0) {
+      await supabase.from('notifications').insert(
+        mentionIds.map((id) => ({
+          user_id: id,
+          type: 'mention_received',
+          reference_id: topic_id,
+          is_read: false,
+        }))
+      )
+    }
   }
 
   return NextResponse.json({ success: true, post, images: savedImages, poll: savedPoll })

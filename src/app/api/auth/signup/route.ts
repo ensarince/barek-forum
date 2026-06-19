@@ -59,6 +59,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Notify all admins of the pending user registration
+    const { data: adminProfiles } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('role', 'admin')
+    const adminIds = (adminProfiles ?? []) as { id: string }[]
+    if (adminIds.length > 0) {
+      await admin.from('notifications').insert(
+        adminIds.map((a) => ({
+          user_id: a.id,
+          type: 'user_pending',
+          reference_id: authData.user.id,
+          is_read: false,
+        }))
+      )
+    }
+
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('Signup route error:', e)

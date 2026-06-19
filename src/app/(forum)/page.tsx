@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { MessageSquare, Pin } from 'lucide-react'
+import RefreshButton from '@/components/forum/RefreshButton'
 import type { TopicWithMeta, TopicRead } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -59,7 +60,10 @@ export default async function FeedPage() {
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Son Tartışmalar</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Son Tartışmalar</h2>
+          <RefreshButton />
+        </div>
         <Link
           href="/topics/new"
           className="text-xs uppercase tracking-widest bg-[#8b1a1a] hover:bg-[#a82020] text-white px-4 py-2 transition-colors"
@@ -92,11 +96,15 @@ export default async function FeedPage() {
                       Duyuru
                     </span>
                   )}
-                  {topic.sector && (
+                  {topic.sector ? (
                     <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">
                       {topic.sector.name}
                     </span>
-                  )}
+                  ) : topic.tag ? (
+                    <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
+                      {topic.tag}
+                    </span>
+                  ) : null}
                 </div>
 
                 <p className={`text-sm leading-snug truncate ${isUnread ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>

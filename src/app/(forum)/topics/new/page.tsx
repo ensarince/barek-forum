@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import NewTopicForm from '@/components/forum/NewTopicForm'
-import type { Sector } from '@/types/database'
+import type { Sector, Profile } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -15,12 +15,19 @@ const PREVIEW_SECTORS: Sector[] = [
 
 export default async function NewTopicPage() {
   if (!SUPABASE_CONFIGURED) {
-    return <NewTopicForm sectors={PREVIEW_SECTORS} />
+    return <NewTopicForm sectors={PREVIEW_SECTORS} isAdmin={false} />
   }
 
   const supabase = await createClient()
-  const { data } = await supabase.from('sectors').select('*').order('order_index')
-  const sectors = (data ?? []) as Sector[]
+  const { data: { user } } = await supabase.auth.getUser()
 
-  return <NewTopicForm sectors={sectors} />
+  const [{ data: sectorsData }, { data: profileData }] = await Promise.all([
+    supabase.from('sectors').select('*').order('order_index'),
+    supabase.from('profiles').select('role').eq('id', user!.id).single(),
+  ])
+
+  const sectors = (sectorsData ?? []) as Sector[]
+  const isAdmin = (profileData as Pick<Profile, 'role'> | null)?.role === 'admin'
+
+  return <NewTopicForm sectors={sectors} isAdmin={isAdmin} />
 }

@@ -68,6 +68,18 @@ export default async function ForumLayout({ children }: { children: React.ReactN
 
   const sectors = (sectorsData ?? []) as Sector[]
 
+  // Count approved topics per sector for sidebar display
+  const { data: topicCountsData } = await supabase
+    .from('topics')
+    .select('sector_id')
+    .eq('status', 'approved')
+    .not('sector_id', 'is', null)
+
+  const sectorCounts = ((topicCountsData ?? []) as { sector_id: string }[]).reduce<Record<string, number>>(
+    (acc, t) => { acc[t.sector_id] = (acc[t.sector_id] ?? 0) + 1; return acc },
+    {}
+  )
+
   const { count: unreadNotifications } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
@@ -78,7 +90,7 @@ export default async function ForumLayout({ children }: { children: React.ReactN
     <div className="flex flex-col h-screen">
       <Topbar profile={profile} unreadCount={unreadNotifications ?? 0} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar sectors={sectors} />
+        <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
         <main className="flex-1 overflow-y-auto bg-background">
           {children}
         </main>

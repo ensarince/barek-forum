@@ -7,7 +7,11 @@ export type NotificationType =
   | 'topic_rejected'
   | 'user_approved'
   | 'reply_received'
+  | 'reply_to_post'
+  | 'mention_received'
   | 'announcement_posted'
+  | 'topic_pending'
+  | 'user_pending'
 
 export interface Profile {
   id: string
@@ -36,6 +40,7 @@ export interface Topic {
   content: string
   author_id: string
   sector_id: string | null
+  tag: string | null
   type: TopicType
   status: TopicStatus
   is_pinned: boolean

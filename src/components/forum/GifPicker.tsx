@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
 interface GifItem {
   id: string
@@ -22,24 +22,20 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
   const ref = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Click outside to close
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose()
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [onClose])
 
-  useEffect(() => {
-    // Load trending on open
-    fetchGifs('')
-  }, [])
-
+  // Single effect: immediate fetch for trending (empty query), debounced for search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => fetchGifs(query), 500)
+    const delay = query.trim() === '' ? 0 : 450
+    debounceRef.current = setTimeout(() => fetchGifs(query.trim()), delay)
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
@@ -72,10 +68,21 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="GIF ara..."
-          autoFocus
           className="flex-1 bg-transparent text-sm text-[#e8e8e8] outline-none placeholder-[#6b6b6b]"
         />
+        {query && (
+          <button type="button" onClick={() => setQuery('')} className="text-[#6b6b6b] hover:text-white">
+            <X size={12} />
+          </button>
+        )}
       </div>
+
+      {/* Trending label */}
+      {!query && !loading && gifs.length > 0 && (
+        <div className="px-2 pt-1.5 pb-0.5">
+          <span className="text-[9px] uppercase tracking-widest text-[#4a4a4a]">Trend</span>
+        </div>
+      )}
 
       {/* GIF grid */}
       <div className="p-1.5 grid grid-cols-3 gap-1 max-h-52 overflow-y-auto">
@@ -104,7 +111,7 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
         ))}
       </div>
 
-      {/* Giphy attribution (required) */}
+      {/* Giphy attribution (required by Giphy terms) */}
       <div className="px-2 py-1 border-t border-[#2a2a2a] text-right">
         <span className="text-[9px] text-[#4a4a4a] uppercase tracking-wider">Powered by GIPHY</span>
       </div>

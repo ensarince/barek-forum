@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { MessageSquare } from 'lucide-react'
+import RefreshButton from '@/components/forum/RefreshButton'
 import type { TopicWithMeta, Sector, TopicRead } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -76,9 +77,12 @@ export default async function SectorPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-0.5">Sektör</p>
-          <h1 className="text-lg font-bold text-white uppercase tracking-wider">{sector.name}</h1>
+        <div className="flex items-center gap-1">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-0.5">Sektör</p>
+            <h1 className="text-lg font-bold text-white uppercase tracking-wider">{sector.name}</h1>
+          </div>
+          <RefreshButton />
         </div>
         <Link
           href="/topics/new"

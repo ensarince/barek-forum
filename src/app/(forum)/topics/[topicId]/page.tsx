@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import PostsList from '@/components/forum/PostsList'
 import PollWidget from '@/components/forum/PollWidget'
+import PostImages from '@/components/forum/PostImages'
+import { renderContent } from '@/lib/renderContent'
 import { User } from 'lucide-react'
 import type { TopicWithMeta, PostWithAuthor, Profile, Image as ImageRow, Poll, PollVote } from '@/types/database'
 
@@ -53,6 +55,14 @@ export default async function TopicPage({ params }: PageProps) {
     .order('created_at', { ascending: true })
 
   const posts = (postsData ?? []) as PostWithAuthor[]
+
+  // Fetch images for the opening post (topic-level, post_id IS NULL)
+  const { data: topicImagesData } = await supabase
+    .from('images')
+    .select('*')
+    .eq('topic_id', topicId)
+    .is('post_id', null)
+  const topicImages = (topicImagesData ?? []) as ImageRow[]
 
   // Fetch images for all posts
   const postIds = posts.map((p) => p.id)
@@ -149,7 +159,7 @@ export default async function TopicPage({ params }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       <TopicHeader topic={topic} />
-      <OpeningPost topic={topic} />
+      <OpeningPost topic={topic} images={topicImages} />
       {poll && (
         <PollWidget
           pollId={poll.id}
@@ -178,11 +188,15 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
         {topic.type === 'announcement' && (
           <span className="text-[9px] uppercase tracking-widest bg-[#8b1a1a] text-white px-1.5 py-0.5">Duyuru</span>
         )}
-        {topic.sector && (
+        {topic.sector ? (
           <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">
             {topic.sector.name}
           </span>
-        )}
+        ) : topic.tag ? (
+          <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
+            {topic.tag}
+          </span>
+        ) : null}
       </div>
       <h1 className="text-xl font-bold text-white leading-snug">{topic.title}</h1>
       <p className="text-[11px] text-[#6b6b6b] mt-1">
@@ -192,7 +206,7 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
   )
 }
 
-function OpeningPost({ topic }: { topic: TopicWithMeta }) {
+function OpeningPost({ topic, images }: { topic: TopicWithMeta; images: ImageRow[] }) {
   return (
     <div className="bg-[#161616] border border-[#2a2a2a] p-5 mb-6">
       <div className="flex items-center gap-2.5">
@@ -206,7 +220,8 @@ function OpeningPost({ topic }: { topic: TopicWithMeta }) {
         <span className="text-sm font-medium text-[#e8e8e8]">{topic.author?.username ?? 'bilinmiyor'}</span>
         <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(topic.created_at)}</span>
       </div>
-      <div className="mt-3 text-sm text-[#e8e8e8] leading-relaxed whitespace-pre-wrap">{topic.content}</div>
+      <div className="mt-3 text-sm text-[#e8e8e8] leading-relaxed whitespace-pre-wrap">{renderContent(topic.content)}</div>
+      {images.length > 0 && <PostImages images={images} />}
     </div>
   )
 }
