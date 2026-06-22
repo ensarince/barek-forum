@@ -90,9 +90,13 @@ export async function POST(request: NextRequest) {
     .from('topic_reads')
     .upsert({ user_id: user.id, topic_id, last_read_at: new Date().toISOString() })
 
+  // All notification inserts go via service client — the RLS policy
+  // "notifications_own" blocks INSERT when user_id != auth.uid()
+  const service = createServiceClient()
+
   // Notify topic author of any new reply
   if (topic.author_id !== user.id) {
-    await supabase.from('notifications').insert({
+    await service.from('notifications').insert({
       user_id: topic.author_id,
       type: 'reply_received',
       reference_id: topic_id,
@@ -101,7 +105,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify parent post author when this is a direct reply to their post
-  // (skip if they are already the topic author — they got reply_received above)
   if (parent_post_id) {
     const { data: parentData } = await supabase
       .from('posts')
@@ -110,7 +113,7 @@ export async function POST(request: NextRequest) {
       .single()
     const parentAuthorId = (parentData as { author_id: string } | null)?.author_id
     if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
-      await supabase.from('notifications').insert({
+      await service.from('notifications').insert({
         user_id: parentAuthorId,
         type: 'reply_to_post',
         reference_id: topic_id,
@@ -135,7 +138,7 @@ export async function POST(request: NextRequest) {
       .map((p) => p.id)
       .filter((id) => id !== user.id)
     if (mentionIds.length > 0) {
-      await supabase.from('notifications').insert(
+      await service.from('notifications').insert(
         mentionIds.map((id) => ({
           user_id: id,
           type: 'mention_received',

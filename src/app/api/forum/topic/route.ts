@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
       .eq('role', 'admin')
     const adminIds = ((adminProfiles ?? []) as { id: string }[]).filter((a) => a.id !== user.id)
     if (adminIds.length > 0) {
-      await supabase.from('notifications').insert(
+      const service = createServiceClient()
+      await service.from('notifications').insert(
         adminIds.map((a) => ({
           user_id: a.id,
           type: 'topic_pending',
