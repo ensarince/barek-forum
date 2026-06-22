@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
 
 export async function POST(request: NextRequest) {
@@ -167,7 +167,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
-  await supabase.from('posts').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', post_id)
+  const service = await createServiceClient()
+  const { error } = await service.from('posts').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', post_id)
+  if (error) return NextResponse.json({ error: 'Güncelleme başarısız.' }, { status: 500 })
   return NextResponse.json({ success: true })
 }
 
@@ -189,18 +191,20 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
-  await supabase.from('posts').update({ is_deleted: true }).eq('id', post_id)
+  const service = await createServiceClient()
+  const { error } = await service.from('posts').update({ is_deleted: true }).eq('id', post_id)
+  if (error) return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
 
   // If no remaining posts in this topic, delete the topic too
-  const { count } = await supabase
+  const { count } = await service
     .from('posts')
     .select('*', { count: 'exact', head: true })
     .eq('topic_id', post.topic_id)
     .eq('is_deleted', false)
 
   if (count === 0) {
-    await supabase.from('notifications').delete().eq('reference_id', post.topic_id)
-    await supabase.from('topics').delete().eq('id', post.topic_id)
+    await service.from('notifications').delete().eq('reference_id', post.topic_id)
+    await service.from('topics').delete().eq('id', post.topic_id)
     return NextResponse.json({ success: true, topicDeleted: true })
   }
 

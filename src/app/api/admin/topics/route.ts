@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Topic } from '@/types/database'
 
 export async function DELETE(request: NextRequest) {
@@ -15,9 +15,10 @@ export async function DELETE(request: NextRequest) {
     const { topicId } = await request.json() as { topicId: string }
     if (!topicId) return NextResponse.json({ error: 'Missing topicId' }, { status: 400 })
 
-    await supabase.from('posts').delete().eq('topic_id', topicId)
-    await supabase.from('notifications').delete().eq('reference_id', topicId)
-    await supabase.from('topics').delete().eq('id', topicId)
+    const service = await createServiceClient()
+    await service.from('posts').delete().eq('topic_id', topicId)
+    await service.from('notifications').delete().eq('reference_id', topicId)
+    await service.from('topics').delete().eq('id', topicId)
 
     return NextResponse.json({ success: true })
   } catch {
@@ -39,18 +40,19 @@ export async function POST(request: Request) {
     const { topicId, action } = body
     if (!topicId || !action) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-    const { data: topicData } = await supabase.from('topics').select('author_id').eq('id', topicId).single()
+    const service = await createServiceClient()
+    const { data: topicData } = await service.from('topics').select('author_id').eq('id', topicId).single()
     const topic = topicData as Pick<Topic, 'author_id'> | null
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
-    await supabase.from('topics').update({
+    await service.from('topics').update({
       status: newStatus,
       approved_by: action === 'approve' ? user.id : null,
       approved_at: action === 'approve' ? new Date().toISOString() : null,
     }).eq('id', topicId)
 
     if (topic) {
-      await supabase.from('notifications').insert({
+      await service.from('notifications').insert({
         user_id: topic.author_id,
         type: action === 'approve' ? 'topic_approved' : 'topic_rejected',
         reference_id: topicId,
