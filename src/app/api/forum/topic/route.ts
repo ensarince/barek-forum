@@ -129,7 +129,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
-  const service = await createServiceClient()
+  const service = createServiceClient()
   const { error } = await service.from('topics').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', topic_id)
   if (error) return NextResponse.json({ error: 'Güncelleme başarısız.' }, { status: 500 })
   return NextResponse.json({ success: true })
@@ -153,7 +153,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
-  const service = await createServiceClient()
+  const service = createServiceClient()
   await service.from('posts').delete().eq('topic_id', topic_id)
   await service.from('notifications').delete().eq('reference_id', topic_id)
   await service.from('topics').delete().eq('id', topic_id)

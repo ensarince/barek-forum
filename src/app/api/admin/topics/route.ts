@@ -15,7 +15,7 @@ export async function DELETE(request: NextRequest) {
     const { topicId } = await request.json() as { topicId: string }
     if (!topicId) return NextResponse.json({ error: 'Missing topicId' }, { status: 400 })
 
-    const service = await createServiceClient()
+    const service = createServiceClient()
     await service.from('posts').delete().eq('topic_id', topicId)
     await service.from('notifications').delete().eq('reference_id', topicId)
     await service.from('topics').delete().eq('id', topicId)
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const { topicId, action } = body
     if (!topicId || !action) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
-    const service = await createServiceClient()
+    const service = createServiceClient()
     const { data: topicData } = await service.from('topics').select('author_id').eq('id', topicId).single()
     const topic = topicData as Pick<Topic, 'author_id'> | null
 
