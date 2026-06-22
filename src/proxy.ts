@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup')
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') ||
+    pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password')
   const isLimboRoute = pathname.startsWith('/pending') || pathname.startsWith('/rejected')
   const isAdminRoute = pathname.startsWith('/admin')
 
@@ -40,8 +41,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Logged in on auth routes → check status and redirect
-  if (user && isAuthRoute) {
+  // Logged in on login/signup → redirect to forum (but allow password reset pages)
+  const isLoginOrSignup = pathname.startsWith('/login') || pathname.startsWith('/signup')
+  if (user && isLoginOrSignup) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('status, role')

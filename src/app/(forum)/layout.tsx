@@ -46,6 +46,7 @@ export default async function ForumLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Middleware already redirects unauthenticated users; this is a safety fallback
   if (!user) redirect('/login')
 
   const { data: profileData } = await supabase
