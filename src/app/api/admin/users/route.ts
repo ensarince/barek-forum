@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types/database'
 
 export async function POST(request: Request) {
@@ -16,11 +16,12 @@ export async function POST(request: Request) {
     const { userId, action } = body
     if (!userId || !action) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
+    const service = createServiceClient()
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
-    await supabase.from('profiles').update({ status: newStatus }).eq('id', userId)
+    await service.from('profiles').update({ status: newStatus }).eq('id', userId)
 
     if (action === 'approve') {
-      await supabase.from('notifications').insert({
+      await service.from('notifications').insert({
         user_id: userId,
         type: 'user_approved',
         reference_id: null,
