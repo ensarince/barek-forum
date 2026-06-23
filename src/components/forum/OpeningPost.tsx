@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, User, X } from 'lucide-react'
 import { formatDistanceToNow } from '@/lib/utils'
@@ -71,7 +72,11 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
             <User size={14} className="text-[#6b6b6b]" />
           </div>
         )}
-        <span className="text-sm font-medium text-[#e8e8e8]">{topic.author?.username ?? 'bilinmiyor'}</span>
+        {topic.author?.username ? (
+          <Link href={`/profile/${topic.author.username}`} className="text-sm font-medium text-[#e8e8e8] hover:text-white hover:underline">{topic.author.username}</Link>
+        ) : (
+          <span className="text-sm font-medium text-[#e8e8e8]">bilinmiyor</span>
+        )}
         <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(topic.created_at)}</span>
 
         {isOwn && !editing && (

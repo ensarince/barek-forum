@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Megaphone } from 'lucide-react'
+import { BookOpen, Megaphone, Shield, Info } from 'lucide-react'
 import type { Sector } from '@/types/database'
 
 interface SidebarProps {
@@ -45,6 +45,13 @@ export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: Sid
           ))}
         </nav>
       </div>
+
+      {/* Footer links */}
+      <div className="mt-auto mx-3 border-t border-[#2a2a2a]" />
+      <nav className="p-3 space-y-0.5">
+        <SidebarLink href="/gizlilik" icon={<Shield size={14} />} label="Gizlilik" active={isActive('/gizlilik')} onClick={onLinkClick} />
+        <SidebarLink href="/impressum" icon={<Info size={14} />} label="Impressum" active={isActive('/impressum')} onClick={onLinkClick} />
+      </nav>
     </aside>
   )
 }

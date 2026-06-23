@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Pencil, Trash2, User, X } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from '@/lib/utils'
@@ -319,7 +320,11 @@ function PostCard({
             <User size={12} className="text-[#6b6b6b]" />
           </div>
         )}
-        <span className="text-sm font-medium text-[#e8e8e8]">{post.author?.username ?? 'bilinmiyor'}</span>
+        {post.author?.username ? (
+          <Link href={`/profile/${post.author.username}`} className="text-sm font-medium text-[#e8e8e8] hover:text-white hover:underline">{post.author.username}</Link>
+        ) : (
+          <span className="text-sm font-medium text-[#e8e8e8]">bilinmiyor</span>
+        )}
         <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(post.created_at)}</span>
         {isOwn && !editing && (
           <div className="ml-auto flex items-center gap-2">
