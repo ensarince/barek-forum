@@ -38,6 +38,9 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
     const existing = reactions.find(r => r.emoji === emoji)
     const removing = existing?.userReacted ?? false
 
+    // Capture state for rollback
+    const prevReactions = reactions
+
     // Optimistic update
     setReactions(prev => {
       if (removing) {
@@ -59,11 +62,14 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
       const body = targetType === 'topic'
         ? { emoji, topic_id: targetId }
         : { emoji, post_id: targetId }
-      await fetch('/api/forum/reaction', {
+      const res = await fetch('/api/forum/reaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      if (!res.ok) setReactions(prevReactions)
+    } catch {
+      setReactions(prevReactions)
     } finally {
       setLoading(null)
     }

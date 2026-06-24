@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 // Splits text on @mentions and highlights them.
 // Avoids matching emails (user@example.com) by requiring @ not be preceded by a word char.
@@ -10,7 +11,7 @@ export function renderContent(content: string): React.ReactNode {
     <>
       {parts.map((part, i) =>
         /^(?<!\w)@[a-zA-Z0-9_]+$/.test(part) ? (
-          <span key={i} className="text-[#c0392b] font-medium">{part}</span>
+          <Link key={i} href={`/profile/${part.slice(1)}`} className="text-[#c0392b] font-medium hover:underline">{part}</Link>
         ) : (
           part
         )

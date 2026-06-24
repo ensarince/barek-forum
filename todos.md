@@ -19,6 +19,10 @@
 - [x] Topic count next to sector names in sidebar (approved topics per sector, quiet grey number)
 
 ## NEXT
+- enable people to see each others profile
+- notifications working when you get a new account request for admin?
+- add gizlilik sözleşmesi and impressum
+- check iphones - this for later
 
 ## FUTURE
 - [ ] Email notifications via Resend — needs a verified domain

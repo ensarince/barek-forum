@@ -12,6 +12,7 @@ function notifLabel(type: NotificationType): string {
     case 'topic_approved':    return 'Konun onaylandı'
     case 'topic_rejected':    return 'Konun reddedildi'
     case 'user_approved':     return 'Üyeliğin onaylandı'
+    case 'user_rejected':     return 'Üyelik başvurun reddedildi'
     case 'reply_received':    return 'Konuna yeni yanıt geldi'
     case 'reply_to_post':     return 'Yanıtına yeni cevap geldi'
     case 'mention_received':  return 'Bir konuda etiketlendin'
@@ -61,7 +62,9 @@ function NotifList({ notifs }: { notifs: Notification[] }) {
               ? `/topics/${n.reference_id}`
               : n.type === 'user_pending'
               ? '/admin/users'
-              : (n.type === 'reply_received' || n.type === 'reply_to_post' || n.type === 'mention_received' || n.type === 'topic_approved' || n.type === 'topic_rejected')
+              : n.type === 'topic_rejected'
+              ? '/'
+              : (n.type === 'reply_received' || n.type === 'reply_to_post' || n.type === 'mention_received' || n.type === 'topic_approved' || n.type === 'announcement_posted')
               ? `/topics/${n.reference_id}`
               : '/'
             : '/'

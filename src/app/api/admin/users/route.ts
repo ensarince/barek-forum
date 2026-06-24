@@ -20,14 +20,12 @@ export async function POST(request: Request) {
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
     await service.from('profiles').update({ status: newStatus }).eq('id', userId)
 
-    if (action === 'approve') {
-      await service.from('notifications').insert({
-        user_id: userId,
-        type: 'user_approved',
-        reference_id: null,
-        is_read: false,
-      })
-    }
+    await service.from('notifications').insert({
+      user_id: userId,
+      type: action === 'approve' ? 'user_approved' : 'user_rejected',
+      reference_id: null,
+      is_read: false,
+    })
 
     return NextResponse.json({ success: true })
   } catch {

@@ -10,6 +10,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { data: profileData } = await supabase.from('profiles').select('status').eq('id', user.id).single()
+  if (!profileData || (profileData as { status: string }).status !== 'approved') {
+    return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  }
+
   const body = await request.json() as {
     topic_id?: string
     content?: string
@@ -93,6 +98,9 @@ export async function POST(request: NextRequest) {
   // All notification inserts go via service client — the RLS policy
   // "notifications_own" blocks INSERT when user_id != auth.uid()
   const service = createServiceClient()
+
+  // Bump topic's updated_at so it surfaces at the top of the feed
+  await service.from('topics').update({ updated_at: new Date().toISOString() }).eq('id', topic_id)
 
   // Notify topic author of any new reply
   if (topic.author_id !== user.id) {

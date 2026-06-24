@@ -6,6 +6,7 @@ export type NotificationType =
   | 'topic_approved'
   | 'topic_rejected'
   | 'user_approved'
+  | 'user_rejected'
   | 'reply_received'
   | 'reply_to_post'
   | 'mention_received'

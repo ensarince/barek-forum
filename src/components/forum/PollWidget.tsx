@@ -14,12 +14,14 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
   const [votes, setVotes] = useState<Record<string, number>>(initialVotes)
   const [userVote, setUserVote] = useState<string | null>(initialUserVote)
   const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const total = Object.values(votes).reduce((a, b) => a + b, 0)
 
   async function castVote(grade: string) {
     if (loading) return
     setLoading(grade)
+    setError(null)
     try {
       const res = await fetch('/api/forum/poll', {
         method: 'POST',
@@ -34,7 +36,11 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
           return next
         })
         setUserVote(grade)
+      } else {
+        setError('Oy verilemedi. Tekrar dene.')
       }
+    } catch {
+      setError('Bir hata oluştu.')
     } finally {
       setLoading(null)
     }
@@ -97,6 +103,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
         </div>
       )}
 
+      {error && <p className="text-[#c0392b] text-xs mt-2">{error}</p>}
       {userVote && (
         <p className="text-[11px] text-[#6b6b6b] mt-3">
           Oyun: <span className="text-[#c0392b] font-bold">{userVote}</span> — değiştirmek için başka dereceye tıkla

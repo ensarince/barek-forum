@@ -62,7 +62,7 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] px-4">
+      <div className="min-h-screen min-h-dvh flex items-center justify-center bg-[#0d0d0d] px-4">
         <div className="text-center max-w-sm">
           <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-3">Kayıt Alındı</h2>
           <p className="text-[#6b6b6b] text-sm leading-relaxed">
@@ -74,7 +74,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] px-4">
+    <div className="min-h-screen min-h-dvh flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
           <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />

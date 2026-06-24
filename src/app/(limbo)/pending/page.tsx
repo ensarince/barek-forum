@@ -5,7 +5,7 @@ export default function PendingPage() {
         <div className="text-[#8b1a1a] text-5xl mb-6">⧖</div>
         <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-3">Onay Bekleniyor</h2>
         <p className="text-[#6b6b6b] text-sm leading-relaxed">
-          Üyelik başvurun admin tarafından inceleniyor. Onaylandığında email ile bildirim alacaksın.
+          Üyelik başvurun admin tarafından fena inceleniyor. Onaylandığında email ile bildirim alacaksın.
         </p>
       </div>
     </div>

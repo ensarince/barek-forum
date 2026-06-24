@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const ALLOWED_EMOJIS = new Set(['❤️', '👍', '🔥', '💪', '😂', '👀', '😮', '🎯'])
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profileData } = await supabase.from('profiles').select('status').eq('id', user.id).single()
+  if (!profileData || (profileData as { status: string }).status !== 'approved') {
+    return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  }
 
   const { emoji, topic_id, post_id } = await request.json() as {
     emoji: string
@@ -14,6 +21,9 @@ export async function POST(request: NextRequest) {
 
   if (!emoji || (!topic_id && !post_id)) {
     return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+  }
+  if (!ALLOWED_EMOJIS.has(emoji)) {
+    return NextResponse.json({ error: 'Geçersiz emoji.' }, { status: 400 })
   }
 
   let checkQuery = supabase

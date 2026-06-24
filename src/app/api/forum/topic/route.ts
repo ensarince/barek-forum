@@ -75,6 +75,27 @@ export async function POST(request: NextRequest) {
     })
   }
 
+  // Notify all approved users when an announcement is posted
+  if (isAnnouncement) {
+    const service = createServiceClient()
+    const { data: allUsers } = await service
+      .from('profiles')
+      .select('id')
+      .eq('status', 'approved')
+      .neq('id', user.id)
+    const userIds = ((allUsers ?? []) as { id: string }[]).map((u) => u.id)
+    if (userIds.length > 0) {
+      await service.from('notifications').insert(
+        userIds.map((id) => ({
+          user_id: id,
+          type: 'announcement_posted',
+          reference_id: topic.id,
+          is_read: false,
+        }))
+      )
+    }
+  }
+
   // Notify all admins of the pending topic (skip if the poster is already an admin)
   if (!isAnnouncement && profile.role !== 'admin') {
     const { data: adminProfiles } = await supabase
