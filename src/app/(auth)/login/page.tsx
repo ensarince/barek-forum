@@ -7,7 +7,6 @@ import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/client'
 import logoSrc from '@/assets/barek-logo.png'
 
 const schema = z.object({
@@ -36,19 +35,20 @@ function LoginForm() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
       })
-      if (error) {
-        setError('Email veya şifre hatalı.')
+      const json = await res.json() as { error?: string }
+      if (!res.ok) {
+        setError(json.error ?? 'Email veya şifre hatalı.')
         return
       }
+      // Hard navigation so the browser sends the server-set session cookie
       window.location.href = '/'
-    } catch (e) {
+    } catch {
       setError('Bir hata oluştu. Lütfen tekrar dene.')
-      console.error('Login error:', e)
     } finally {
       setLoading(false)
     }
