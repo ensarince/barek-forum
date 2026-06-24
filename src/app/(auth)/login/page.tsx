@@ -17,10 +17,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
+// Isolated to its own Suspense so the form itself is never deferred
+function PasswordResetBanner() {
+  const searchParams = useSearchParams()
+  if (searchParams.get('reset') !== '1') return null
+  return <p className="text-center text-sm text-green-400 mb-4">Şifren güncellendi. Giriş yapabilirsin.</p>
+}
+
 function LoginForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const passwordReset = searchParams.get('reset') === '1'
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -53,9 +58,9 @@ function LoginForm() {
 
   return (
     <>
-      {passwordReset && (
-        <p className="text-center text-sm text-green-400 mb-4">Şifren güncellendi. Giriş yapabilirsin.</p>
-      )}
+      <Suspense>
+        <PasswordResetBanner />
+      </Suspense>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
@@ -63,6 +68,7 @@ function LoginForm() {
             {...register('email')}
             type="email"
             placeholder="Email"
+            autoComplete="email"
             className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
           />
           {errors.email && <p className="text-[#c0392b] text-xs mt-1">{errors.email.message}</p>}
@@ -73,6 +79,7 @@ function LoginForm() {
             {...register('password')}
             type="password"
             placeholder="Şifre"
+            autoComplete="current-password"
             className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
           />
           {errors.password && <p className="text-[#c0392b] text-xs mt-1">{errors.password.message}</p>}
@@ -112,9 +119,7 @@ export default function LoginPage() {
           <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
           <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
-        <Suspense>
-          <LoginForm />
-        </Suspense>
+        <LoginForm />
       </div>
     </div>
   )
