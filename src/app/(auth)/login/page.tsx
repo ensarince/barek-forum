@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useForm } from 'react-hook-form'
@@ -25,7 +25,6 @@ function PasswordResetBanner() {
 }
 
 function LoginForm() {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,8 +45,7 @@ function LoginForm() {
         setError('Email veya şifre hatalı.')
         return
       }
-      router.refresh()
-      router.push('/')
+      window.location.href = '/'
     } catch (e) {
       setError('Bir hata oluştu. Lütfen tekrar dene.')
       console.error('Login error:', e)
