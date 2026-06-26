@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types/database'
-import { LayoutDashboard, Users, MessageSquare, Mountain, BookOpen, Megaphone, ArrowLeft } from 'lucide-react'
+import { LayoutDashboard, Users, MessageSquare, Mountain, BookOpen, Megaphone, Bug, ArrowLeft } from 'lucide-react'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -15,6 +15,7 @@ const NAV = [
   { href: '/admin/sectors', label: 'Sektörler', icon: Mountain },
   { href: '/admin/rules', label: 'Kurallar', icon: BookOpen },
   { href: '/admin/announcements/new', label: 'Duyuru Yaz', icon: Megaphone },
+  { href: '/admin/bug-reports', label: 'Hata Raporları', icon: Bug },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

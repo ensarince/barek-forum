@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, Megaphone, Shield, Info } from 'lucide-react'
+import { BookOpen, Megaphone, Shield, Info, Bug } from 'lucide-react'
 import type { Sector } from '@/types/database'
+import BugReportModal from '@/components/forum/BugReportModal'
 
 interface SidebarProps {
   sectors: Sector[]
@@ -13,46 +15,58 @@ interface SidebarProps {
 
 export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: SidebarProps) {
   const pathname = usePathname()
+  const [bugReportOpen, setBugReportOpen] = useState(false)
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
   }
 
   return (
-    <aside className="flex w-56 bg-[#111111] border-r border-[#2a2a2a] flex-col shrink-0 overflow-y-auto">
-      {/* Static links */}
-      <nav className="p-3 space-y-0.5">
-        <SidebarLink href="/rules" icon={<BookOpen size={14} />} label="Kurallar" active={isActive('/rules')} onClick={onLinkClick} />
-        <SidebarLink href="/announcements" icon={<Megaphone size={14} />} label="Duyurular" active={isActive('/announcements')} onClick={onLinkClick} />
-      </nav>
-
-      {/* Divider */}
-      <div className="mx-3 border-t border-[#2a2a2a]" />
-
-      {/* Sectors */}
-      <div className="p-3">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-[#6b6b6b] mb-2 px-2">Sektörler</p>
-        <nav className="space-y-0.5">
-          {sectors.map((sector) => (
-            <SidebarLink
-              key={sector.id}
-              href={`/sectors/${sector.id}`}
-              label={sector.name}
-              count={sectorCounts[sector.id]}
-              active={isActive(`/sectors/${sector.id}`)}
-              onClick={onLinkClick}
-            />
-          ))}
+    <>
+      <aside className="flex w-56 bg-[#111111] border-r border-[#2a2a2a] flex-col shrink-0 overflow-y-auto">
+        {/* Static links */}
+        <nav className="p-3 space-y-0.5">
+          <SidebarLink href="/rules" icon={<BookOpen size={14} />} label="Kurallar" active={isActive('/rules')} onClick={onLinkClick} />
+          <SidebarLink href="/announcements" icon={<Megaphone size={14} />} label="Duyurular" active={isActive('/announcements')} onClick={onLinkClick} />
         </nav>
-      </div>
 
-      {/* Footer links */}
-      <div className="mt-auto mx-3 border-t border-[#2a2a2a]" />
-      <nav className="p-3 space-y-0.5">
-        <SidebarLink href="/gizlilik" icon={<Shield size={14} />} label="Gizlilik" active={isActive('/gizlilik')} onClick={onLinkClick} />
-        <SidebarLink href="/impressum" icon={<Info size={14} />} label="Impressum" active={isActive('/impressum')} onClick={onLinkClick} />
-      </nav>
-    </aside>
+        {/* Divider */}
+        <div className="mx-3 border-t border-[#2a2a2a]" />
+
+        {/* Sectors */}
+        <div className="p-3">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-[#6b6b6b] mb-2 px-2">Sektörler</p>
+          <nav className="space-y-0.5">
+            {sectors.map((sector) => (
+              <SidebarLink
+                key={sector.id}
+                href={`/sectors/${sector.id}`}
+                label={sector.name}
+                count={sectorCounts[sector.id]}
+                active={isActive(`/sectors/${sector.id}`)}
+                onClick={onLinkClick}
+              />
+            ))}
+          </nav>
+        </div>
+
+        {/* Footer links */}
+        <div className="mt-auto mx-3 border-t border-[#2a2a2a]" />
+        <nav className="p-3 space-y-0.5">
+          <button
+            onClick={() => setBugReportOpen(true)}
+            className="flex items-center gap-2.5 px-2 py-1.5 text-sm transition-colors w-full text-left text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent"
+          >
+            <span className="text-[#6b6b6b]"><Bug size={14} /></span>
+            <span className="flex-1 truncate">Hata Bildir</span>
+          </button>
+          <SidebarLink href="/gizlilik" icon={<Shield size={14} />} label="Gizlilik" active={isActive('/gizlilik')} onClick={onLinkClick} />
+          <SidebarLink href="/impressum" icon={<Info size={14} />} label="Impressum" active={isActive('/impressum')} onClick={onLinkClick} />
+        </nav>
+      </aside>
+
+      <BugReportModal isOpen={bugReportOpen} onClose={() => setBugReportOpen(false)} />
+    </>
   )
 }
 

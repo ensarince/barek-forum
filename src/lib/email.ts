@@ -189,6 +189,18 @@ export async function emailUserMentioned(userId: string, username: string, menti
   `)
 }
 
+/** Admin: a user submitted a bug report */
+export async function emailAdminBugReport(adminIds: string[], reporterUsername: string, description: string, pageUrl: string) {
+  const adminEmails = await getUserEmails(adminIds)
+  if (!adminEmails.length) return
+  await send(adminEmails, `Hata raporu — ${reporterUsername}`, `
+    ${p(`<strong style="color:#fff">${reporterUsername}</strong> bir hata bildirdi:`, '#e8e8e8')}
+    ${quote(description)}
+    ${pageUrl ? p(`Sayfa: <code style="color:#c8c8c8;background:#1a1a1a;padding:2px 6px;font-size:12px;">${pageUrl}</code>`) : ''}
+    ${btn(`${SITE}/admin/bug-reports`, 'Raporları Gör')}
+  `)
+}
+
 /** All approved users: a new announcement was posted */
 export async function emailAllUsersAnnouncement(userIds: string[], announcementTitle: string, topicId: string) {
   const emails = await getUserEmails(userIds)
