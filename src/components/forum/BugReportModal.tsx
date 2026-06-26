@@ -107,7 +107,9 @@ export default function BugReportModal({ isOpen, onClose }: Props) {
                   placeholder="Hatayı kısaca açıkla — ne yaptın, ne bekliyordun, ne gördün..."
                   className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2.5 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#4a4a4a] resize-none"
                 />
-                <p className="text-[10px] text-[#4a4a4a] mt-1">{description.length} / 10 min</p>
+                {description.length < 10 && (
+                  <p className="text-[10px] text-[#4a4a4a] mt-1">{description.length} / 10 karakter</p>
+                )}
               </div>
 
               {error && <p className="text-[#c0392b] text-xs">{error}</p>}
