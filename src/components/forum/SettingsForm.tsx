@@ -16,6 +16,7 @@ const profileSchema = z.object({
 })
 
 const passwordSchema = z.object({
+  current_password: z.string().min(1, 'Mevcut şifre gerekli'),
   new_password: z.string().min(8, 'En az 8 karakter'),
   confirm_password: z.string(),
 }).refine(d => d.new_password === d.confirm_password, {
@@ -99,7 +100,11 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
     const res = await fetch('/api/user/password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ new_password: data.new_password, confirm_password: data.confirm_password }),
+      body: JSON.stringify({
+        current_password: data.current_password,
+        new_password: data.new_password,
+        confirm_password: data.confirm_password,
+      }),
     })
     if (res.ok) {
       setPasswordMsg({ ok: true, text: 'Şifre güncellendi.' })
@@ -213,6 +218,18 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
       <section className="bg-[#161616] border border-[#2a2a2a] p-6">
         <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Şifre Değiştir</h2>
         <form onSubmit={passwordForm.handleSubmit(savePassword)} className="space-y-4">
+          <div>
+            <label className={labelCls}>Mevcut Şifre</label>
+            <input
+              {...passwordForm.register('current_password')}
+              type="password"
+              placeholder="Mevcut şifreni gir"
+              className={inputCls}
+            />
+            {passwordForm.formState.errors.current_password && (
+              <p className={errorCls}>{passwordForm.formState.errors.current_password.message}</p>
+            )}
+          </div>
           <div>
             <label className={labelCls}>Yeni Şifre</label>
             <input

@@ -13,8 +13,9 @@ async function requireAdmin() {
 }
 
 export async function GET() {
+  const { error, status, supabase } = await requireAdmin()
+  if (error || !supabase) return NextResponse.json({ error }, { status })
   try {
-    const supabase = await createClient()
     const { data } = await supabase.from('sectors').select('*').order('order_index')
     return NextResponse.json((data ?? []) as Sector[])
   } catch {

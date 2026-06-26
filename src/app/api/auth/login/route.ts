@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
@@ -8,8 +9,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email ve şifre gerekli.' }, { status: 400 })
     }
 
-    // Sign in server-side so the session is set via HTTP Set-Cookie headers.
-    // This is more reliable than client-side cookie storage, especially on Safari.
+    // Rate limit: 10 attempts per email per 15 minutes
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    if (!rateLimit(`login:${email}:${ip}`, 10, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Çok fazla deneme. 15 dakika sonra tekrar dene.' }, { status: 429 })
+    }
+
     const supabase = await createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 

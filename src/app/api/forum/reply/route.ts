@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
   if (!hasImages && (!content || !content.trim())) {
     return NextResponse.json({ error: 'Yanıt boş olamaz.' }, { status: 400 })
   }
+  if (content && content.length > 20000) {
+    return NextResponse.json({ error: 'Yanıt çok uzun (max 20.000 karakter).' }, { status: 400 })
+  }
   if (!topic_id) {
     return NextResponse.json({ error: 'topic_id gerekli.' }, { status: 400 })
   }
@@ -63,10 +66,18 @@ export async function POST(request: NextRequest) {
 
   const post = postData as Post
 
+  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL
+  const validatedImages = (images ?? []).filter((img) => {
+    if (img.publicId?.startsWith('giphy_')) {
+      return /^https:\/\/media\.giphy\.com\//.test(img.url)
+    }
+    return true
+  })
+
   // Insert image records
   let savedImages: ImageRow[] = []
-  if (images && images.length > 0) {
-    const imageInserts = images.map((img) => ({
+  if (validatedImages.length > 0) {
+    const imageInserts = validatedImages.map((img) => ({
       uploader_id: user.id,
       cloudinary_url: img.url,
       cloudinary_id: img.publicId,
@@ -81,6 +92,7 @@ export async function POST(request: NextRequest) {
 
     savedImages = (imgData ?? []) as ImageRow[]
   }
+
 
   // Create poll attached to this post if requested
   let savedPoll: Poll | null = null
@@ -115,15 +127,20 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify parent post author when this is a direct reply to their post
-  // BUG 5 FIX: hoist parentAuthorId so the email section can reference it
   let parentAuthorId: string | null = null
   if (parent_post_id) {
     const { data: parentData } = await supabase
       .from('posts')
-      .select('author_id')
+      .select('author_id, topic_id')
       .eq('id', parent_post_id)
       .single()
-    parentAuthorId = (parentData as { author_id: string } | null)?.author_id ?? null
+
+    // Cross-topic reply guard: parent post must belong to the same topic
+    if (!parentData || (parentData as { topic_id: string }).topic_id !== topic_id) {
+      return NextResponse.json({ error: 'Geçersiz parent_post_id.' }, { status: 400 })
+    }
+
+    parentAuthorId = (parentData as { author_id: string }).author_id
     if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
       await service.from('notifications').insert({
         user_id: parentAuthorId,
@@ -139,7 +156,7 @@ export async function POST(request: NextRequest) {
   const mentionedUsernames: string[] = []
   let m: RegExpExecArray | null
   while (content && (m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
-  const uniqueUsernames = [...new Set(mentionedUsernames)]
+  const uniqueUsernames = [...new Set(mentionedUsernames)].slice(0, 5)
 
   let mentionedUsers: { id: string; username: string }[] = []
   if (uniqueUsernames.length > 0) {

@@ -1,19 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { emailAdminsNewUser } from '@/lib/email'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+
+    // Rate limit: 3 signups per IP per hour
+    if (!rateLimit(`signup:${ip}`, 3, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Çok fazla kayıt denemesi. Lütfen daha sonra tekrar dene.' }, { status: 429 })
+    }
+
     const { email, password, username } = await request.json()
 
     if (!email || !password || !username) {
       return NextResponse.json({ error: 'Eksik bilgi.' }, { status: 400 })
     }
 
+    // Server-side username validation — mirrors the client-side Zod schema
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      return NextResponse.json({ error: 'Kullanıcı adı 3-30 karakter olmalı ve sadece harf, rakam, alt çizgi içerebilir.' }, { status: 400 })
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-    // Use admin client (service role) — bypasses all RLS and trigger issues
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
@@ -33,17 +45,16 @@ export async function POST(request: NextRequest) {
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // skip email confirmation
+      email_confirm: true,
     })
 
     if (authError || !authData.user) {
-      return NextResponse.json(
-        { error: authError?.message ?? 'Kullanıcı oluşturulamadı.' },
-        { status: 500 }
-      )
+      // Never expose the raw provider error — it leaks whether the email is registered
+      console.error('[signup] createUser failed:', authError?.message)
+      return NextResponse.json({ error: 'Kullanıcı oluşturulamadı.' }, { status: 500 })
     }
 
-    // Create profile row directly — no trigger needed
+    // Create profile row directly
     const { error: profileError } = await admin.from('profiles').insert({
       id: authData.user.id,
       username,
@@ -52,15 +63,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (profileError) {
-      // Rollback: delete the auth user if profile creation failed
       await admin.auth.admin.deleteUser(authData.user.id)
-      return NextResponse.json(
-        { error: 'Profil oluşturulamadı: ' + profileError.message },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Profil oluşturulamadı.' }, { status: 500 })
     }
 
-    // Notify all admins of the pending user registration
+    // Notify admins of the pending user registration
     const { data: adminProfiles } = await admin
       .from('profiles')
       .select('id')

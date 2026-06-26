@@ -42,10 +42,13 @@ export async function POST(request: Request) {
     if (!topicId || !action) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
     const service = createServiceClient()
-    const { data: topicData } = await service.from('topics').select('author_id, title').eq('id', topicId).single()
-    const topic = topicData as Pick<Topic, 'author_id' | 'title'> | null
+    const { data: topicData } = await service.from('topics').select('author_id, title, status').eq('id', topicId).single()
+    const topic = topicData as Pick<Topic, 'author_id' | 'title' | 'status'> | null
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
+
+    // Idempotency: skip if already in the target status
+    if (topic?.status === newStatus) return NextResponse.json({ success: true })
     // BUG 4 FIX: check update result before sending email
     const { error: updateError } = await service.from('topics').update({
       status: newStatus,

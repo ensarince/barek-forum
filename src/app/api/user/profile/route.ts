@@ -12,7 +12,8 @@ export async function PATCH(request: Request) {
 
   const body = await request.json() as Record<string, unknown>
 
-  const urlFields = ['eight_a_url', 'topo_url', 'instagram_url', 'youtube_url'] as const
+  // avatar_url included — prevents javascript: and data: URI injection
+  const urlFields = ['avatar_url', 'eight_a_url', 'topo_url', 'instagram_url', 'youtube_url'] as const
   for (const field of urlFields) {
     const val = body[field]
     if (val && typeof val === 'string' && val.trim() !== '' && !isValidUrl(val.trim())) {
@@ -25,9 +26,6 @@ export async function PATCH(request: Request) {
   if (typeof body.full_name === 'string') {
     update.full_name = body.full_name.trim() || null
   }
-  if (typeof body.avatar_url === 'string') {
-    update.avatar_url = body.avatar_url.trim() || null
-  }
   for (const field of urlFields) {
     if (typeof body[field] === 'string') {
       update[field] = (body[field] as string).trim() || null
@@ -39,6 +37,9 @@ export async function PATCH(request: Request) {
     .update(update)
     .eq('id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[profile] update failed:', error)
+    return NextResponse.json({ error: 'Profil güncellenemedi.' }, { status: 500 })
+  }
   return NextResponse.json({ success: true })
 }

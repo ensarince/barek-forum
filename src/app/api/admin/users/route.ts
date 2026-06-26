@@ -20,10 +20,14 @@ export async function POST(request: Request) {
     const service = createServiceClient()
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
 
-    const { data: targetProfile } = await service.from('profiles').select('username').eq('id', userId).single()
+    const { data: targetProfile } = await service.from('profiles').select('username, status').eq('id', userId).single()
     const targetUsername = (targetProfile as { username: string } | null)?.username ?? userId
 
-    // BUG 4 FIX: check update result before sending email
+    // Idempotency: skip if already in the target status
+    if ((targetProfile as { status: string } | null)?.status === newStatus) {
+      return NextResponse.json({ success: true })
+    }
+
     const { error: updateError } = await service.from('profiles').update({ status: newStatus }).eq('id', userId)
     if (updateError) return NextResponse.json({ error: 'Server error' }, { status: 500 })
 

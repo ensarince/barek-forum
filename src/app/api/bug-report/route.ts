@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { emailAdminBugReport } from '@/lib/email'
+import { rateLimit } from '@/lib/rateLimit'
 import type { Profile } from '@/types/database'
 
 export async function POST(request: NextRequest) {
@@ -13,6 +14,11 @@ export async function POST(request: NextRequest) {
     const profile = profileData as Pick<Profile, 'username' | 'status'> | null
     if (!profile || profile.status !== 'approved') {
       return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+    }
+
+    // Rate limit: 5 reports per user per hour
+    if (!rateLimit(`bug-report:${user.id}`, 5, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Çok sık rapor gönderiyorsun, lütfen bekle.' }, { status: 429 })
     }
 
     const body = await request.json() as { description?: string; pageUrl?: string }

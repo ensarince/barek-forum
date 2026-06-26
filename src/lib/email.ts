@@ -5,7 +5,16 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.EMAIL_FROM ?? 'Barek Forum <noreply@barekforum.com>'
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
 
-// ─── HTML shell ───────────────────────────────────────────────────────────────
+// ─── HTML helpers ─────────────────────────────────────────────────────────────
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
 
 function shell(body: string) {
   return `<!DOCTYPE html>
@@ -46,7 +55,7 @@ function quote(text: string) {
   return `<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #8b1a1a;background:#161616;font-size:13px;color:#c8c8c8;font-style:italic;">${text}</p>`
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Supabase helpers ─────────────────────────────────────────────────────────
 
 async function getUserEmail(userId: string): Promise<string | null> {
   try {
@@ -58,7 +67,6 @@ async function getUserEmail(userId: string): Promise<string | null> {
   }
 }
 
-// BUG 6 FIX: single listUsers() call instead of N getUserById calls
 async function getUserEmails(userIds: string[]): Promise<string[]> {
   if (!userIds.length) return []
   try {
@@ -74,7 +82,7 @@ async function getUserEmails(userIds: string[]): Promise<string[]> {
 }
 
 async function send(to: string | string[], subject: string, body: string) {
-  if (!process.env.RESEND_API_KEY) return // silently skip in dev if not configured
+  if (!process.env.RESEND_API_KEY) return
   try {
     await resend.emails.send({ from: FROM, to: Array.isArray(to) ? to : [to], subject, html: shell(body) })
   } catch (e) {
@@ -85,7 +93,6 @@ async function send(to: string | string[], subject: string, body: string) {
 async function sendBcc(bcc: string[], subject: string, body: string) {
   if (!process.env.RESEND_API_KEY || !bcc.length) return
   try {
-    // BUG 3 FIX: extract plain email from "Name <email>" display format
     const toAddr = FROM.replace(/.*<(.+)>.*/, '$1')
     await resend.emails.send({ from: FROM, to: [toAddr], bcc, subject, html: shell(body) })
   } catch (e) {
@@ -99,9 +106,11 @@ async function sendBcc(bcc: string[], subject: string, body: string) {
 export async function emailAdminsNewUser(adminIds: string[], newUsername: string, newUserEmail: string) {
   const adminEmails = await getUserEmails(adminIds)
   if (!adminEmails.length) return
+  const u = escapeHtml(newUsername)
+  const e = escapeHtml(newUserEmail)
   await send(adminEmails, `Yeni üyelik başvurusu — ${newUsername}`, `
     ${p('Yeni bir üyelik başvurusu var:', '#e8e8e8')}
-    ${p(`<strong style="color:#fff">${newUsername}</strong> &lt;${newUserEmail}&gt;`)}
+    ${p(`<strong style="color:#fff">${u}</strong> &lt;${e}&gt;`)}
     ${p('Admin panelinden başvuruyu inceleyip onaylayabilirsin.')}
     ${btn(`${SITE}/admin/users`, 'Başvuruyu İncele')}
   `)
@@ -111,8 +120,9 @@ export async function emailAdminsNewUser(adminIds: string[], newUsername: string
 export async function emailUserApproved(userId: string, username: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
   await send(email, 'Üyeliğin onaylandı — Barek Forum', `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
     ${p('Üyelik başvurun onaylandı. Artık foruma giriş yapabilirsin.')}
     ${btn(`${SITE}/login`, 'Foruma Gir')}
   `)
@@ -122,8 +132,9 @@ export async function emailUserApproved(userId: string, username: string) {
 export async function emailUserRejected(userId: string, username: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
   await send(email, 'Üyelik başvurun hakkında — Barek Forum', `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
     ${p('Üyelik başvurun bu sefer onaylanmadı.')}
     ${p('Sorularınız için <a href="mailto:barekforum@gmail.com" style="color:#c0392b;">barekforum@gmail.com</a> adresine yazabilirsin.')}
   `)
@@ -133,9 +144,11 @@ export async function emailUserRejected(userId: string, username: string) {
 export async function emailAdminsNewTopic(adminIds: string[], authorUsername: string, topicTitle: string) {
   const adminEmails = await getUserEmails(adminIds)
   if (!adminEmails.length) return
+  const u = escapeHtml(authorUsername)
+  const t = escapeHtml(topicTitle)
   await send(adminEmails, `Yeni konu onay bekliyor — ${authorUsername}`, `
-    ${p(`<strong style="color:#fff">${authorUsername}</strong> yeni bir konu paylaştı:`, '#e8e8e8')}
-    ${quote(topicTitle)}
+    ${p(`<strong style="color:#fff">${u}</strong> yeni bir konu paylaştı:`, '#e8e8e8')}
+    ${quote(t)}
     ${p('Admin panelinden inceleyip onaylayabilirsin.')}
     ${btn(`${SITE}/admin/topics`, 'Konuyu İncele')}
   `)
@@ -145,10 +158,12 @@ export async function emailAdminsNewTopic(adminIds: string[], authorUsername: st
 export async function emailUserTopicApproved(userId: string, username: string, topicTitle: string, topicId: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
+  const t = escapeHtml(topicTitle)
   await send(email, `Konun onaylandı — Barek Forum`, `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
     ${p('Aşağıdaki konun onaylandı ve forumda yayınlandı:')}
-    ${quote(topicTitle)}
+    ${quote(t)}
     ${btn(`${SITE}/topics/${topicId}`, 'Konuya Git')}
   `)
 }
@@ -157,10 +172,12 @@ export async function emailUserTopicApproved(userId: string, username: string, t
 export async function emailUserTopicRejected(userId: string, username: string, topicTitle: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
+  const t = escapeHtml(topicTitle)
   await send(email, 'Konu başvurun hakkında — Barek Forum', `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
     ${p('Aşağıdaki konu bu sefer onaylanmadı:')}
-    ${quote(topicTitle)}
+    ${quote(t)}
     ${p('Sorularınız için <a href="mailto:barekforum@gmail.com" style="color:#c0392b;">barekforum@gmail.com</a> adresine yazabilirsin.')}
   `)
 }
@@ -169,10 +186,13 @@ export async function emailUserTopicRejected(userId: string, username: string, t
 export async function emailUserNewReply(userId: string, username: string, replierUsername: string, topicTitle: string, topicId: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
+  const r = escapeHtml(replierUsername)
+  const t = escapeHtml(topicTitle)
   await send(email, `Konuna yeni yanıt — ${replierUsername}`, `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
-    ${p(`<strong style="color:#fff">${replierUsername}</strong> konuna yanıt verdi:`)}
-    ${quote(topicTitle)}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
+    ${p(`<strong style="color:#fff">${r}</strong> konuna yanıt verdi:`)}
+    ${quote(t)}
     ${btn(`${SITE}/topics/${topicId}`, 'Yanıtı Gör')}
   `)
 }
@@ -181,10 +201,13 @@ export async function emailUserNewReply(userId: string, username: string, replie
 export async function emailUserMentioned(userId: string, username: string, mentionerUsername: string, topicTitle: string, topicId: string) {
   const email = await getUserEmail(userId)
   if (!email) return
+  const u = escapeHtml(username)
+  const m = escapeHtml(mentionerUsername)
+  const t = escapeHtml(topicTitle)
   await send(email, `${mentionerUsername} seni etiketledi`, `
-    ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
-    ${p(`<strong style="color:#fff">${mentionerUsername}</strong> bir konuda seni etiketledi:`)}
-    ${quote(topicTitle)}
+    ${p(`Merhaba <strong style="color:#fff">${u}</strong>,`, '#e8e8e8')}
+    ${p(`<strong style="color:#fff">${m}</strong> bir konuda seni etiketledi:`)}
+    ${quote(t)}
     ${btn(`${SITE}/topics/${topicId}`, 'Konuya Git')}
   `)
 }
@@ -212,10 +235,13 @@ export async function emailPasswordReset(toEmail: string, resetLink: string) {
 export async function emailAdminBugReport(adminIds: string[], reporterUsername: string, description: string, pageUrl: string) {
   const adminEmails = await getUserEmails(adminIds)
   if (!adminEmails.length) return
+  const u = escapeHtml(reporterUsername)
+  const d = escapeHtml(description)
+  const url = escapeHtml(pageUrl)
   await send(adminEmails, `Hata raporu — ${reporterUsername}`, `
-    ${p(`<strong style="color:#fff">${reporterUsername}</strong> bir hata bildirdi:`, '#e8e8e8')}
-    ${quote(description)}
-    ${pageUrl ? p(`Sayfa: <code style="color:#c8c8c8;background:#1a1a1a;padding:2px 6px;font-size:12px;">${pageUrl}</code>`) : ''}
+    ${p(`<strong style="color:#fff">${u}</strong> bir hata bildirdi:`, '#e8e8e8')}
+    ${quote(d)}
+    ${url ? p(`Sayfa: <code style="color:#c8c8c8;background:#1a1a1a;padding:2px 6px;font-size:12px;">${url}</code>`) : ''}
     ${btn(`${SITE}/admin/bug-reports`, 'Raporları Gör')}
   `)
 }
@@ -224,10 +250,10 @@ export async function emailAdminBugReport(adminIds: string[], reporterUsername: 
 export async function emailAllUsersAnnouncement(userIds: string[], announcementTitle: string, topicId: string) {
   const emails = await getUserEmails(userIds)
   if (!emails.length) return
-  // BCC so recipients don't see each other
+  const t = escapeHtml(announcementTitle)
   await sendBcc(emails, `Yeni duyuru: ${announcementTitle}`, `
     ${p('Barek Bouldering Forum\'dan yeni bir duyuru:', '#e8e8e8')}
-    ${quote(announcementTitle)}
+    ${quote(t)}
     ${btn(`${SITE}/topics/${topicId}`, 'Duyuruyu Oku')}
   `)
 }

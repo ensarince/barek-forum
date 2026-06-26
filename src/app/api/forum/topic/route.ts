@@ -35,8 +35,17 @@ export async function POST(request: NextRequest) {
   if (!title || title.trim().length < 3) {
     return NextResponse.json({ error: 'Başlık en az 3 karakter olmalı.' }, { status: 400 })
   }
+  if (title.trim().length > 200) {
+    return NextResponse.json({ error: 'Başlık çok uzun (max 200 karakter).' }, { status: 400 })
+  }
   if (!content || !content.trim()) {
     return NextResponse.json({ error: 'İçerik boş olamaz.' }, { status: 400 })
+  }
+  if (content.trim().length > 50000) {
+    return NextResponse.json({ error: 'İçerik çok uzun (max 50.000 karakter).' }, { status: 400 })
+  }
+  if (tag && tag.trim().length > 50) {
+    return NextResponse.json({ error: 'Etiket çok uzun (max 50 karakter).' }, { status: 400 })
   }
 
   // Validate sector if provided
@@ -121,9 +130,17 @@ export async function POST(request: NextRequest) {
   }
 
   // Save images attached to the opening post
+  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL
+  const validatedImages = (images ?? []).filter((img) => {
+    if (img.publicId?.startsWith('giphy_')) {
+      return /^https:\/\/media\.giphy\.com\//.test(img.url)
+    }
+    return true
+  })
+
   let savedImages: ImageRow[] = []
-  if (images && images.length > 0) {
-    const imageInserts = images.map((img) => ({
+  if (validatedImages.length > 0) {
+    const imageInserts = validatedImages.map((img) => ({
       uploader_id: user.id,
       cloudinary_url: img.url,
       cloudinary_id: img.publicId,
