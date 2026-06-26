@@ -15,18 +15,36 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
-  // The callback route exchanges the PKCE code for a session before landing here.
-  // We just verify there is an active session before showing the form.
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true)
-      } else {
-        // No session — link expired or already used
-        setError('Bu bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama bağlantısı talep et.')
-      }
-    })
+
+    // Implicit flow: Supabase delivers tokens as hash fragment
+    // (#access_token=...&refresh_token=...&type=recovery)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
+    const type = hashParams.get('type')
+
+    if (accessToken && refreshToken && type === 'recovery') {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: sessionError }) => {
+          if (sessionError) {
+            setError('Bu bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama bağlantısı talep et.')
+          } else {
+            window.history.replaceState(null, '', window.location.pathname)
+            setReady(true)
+          }
+        })
+    } else {
+      // PKCE flow: session already set by callback route
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setReady(true)
+        } else {
+          setError('Bu bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama bağlantısı talep et.')
+        }
+      })
+    }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {

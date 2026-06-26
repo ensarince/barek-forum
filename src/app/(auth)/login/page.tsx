@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -26,6 +26,15 @@ function PasswordResetBanner() {
 function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Supabase implicit-flow recovery: tokens land at /login#access_token=...&type=recovery
+  // Redirect immediately to /reset-password so it can pick them up
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    if (params.get('type') === 'recovery' && params.get('access_token')) {
+      window.location.replace(`/reset-password${window.location.hash}`)
+    }
+  }, [])
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
