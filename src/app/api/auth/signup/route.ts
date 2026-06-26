@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
+import { emailAdminsNewUser } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
           is_read: false,
         }))
       )
+      await emailAdminsNewUser(adminIds.map((a) => a.id), username, email)
     }
 
     return NextResponse.json({ success: true })

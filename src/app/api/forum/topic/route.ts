@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
+import { emailAdminsNewTopic, emailAllUsersAnnouncement } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -12,11 +13,11 @@ export async function POST(request: NextRequest) {
 
   const { data: profileData } = await supabase
     .from('profiles')
-    .select('status, role')
+    .select('status, role, username')
     .eq('id', user.id)
     .single()
 
-  const profile = profileData as Pick<Profile, 'status' | 'role'> | null
+  const profile = profileData as Pick<Profile, 'status' | 'role' | 'username'> | null
   if (!profile || profile.status !== 'approved') {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   }
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
           is_read: false,
         }))
       )
+      await emailAllUsersAnnouncement(userIds, title.trim(), topic.id)
     }
   }
 
@@ -113,6 +115,7 @@ export async function POST(request: NextRequest) {
           is_read: false,
         }))
       )
+      await emailAdminsNewTopic(adminIds.map((a) => a.id), profile.username, title.trim())
     }
   }
 

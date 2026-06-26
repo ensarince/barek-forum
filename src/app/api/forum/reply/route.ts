@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
+import { emailUserNewReply, emailUserMentioned } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -10,10 +11,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profileData } = await supabase.from('profiles').select('status').eq('id', user.id).single()
+  const { data: profileData } = await supabase.from('profiles').select('status, username').eq('id', user.id).single()
   if (!profileData || (profileData as { status: string }).status !== 'approved') {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   }
+  const currentUsername = (profileData as { username: string }).username
 
   const body = await request.json() as {
     topic_id?: string
@@ -34,11 +36,11 @@ export async function POST(request: NextRequest) {
 
   const { data: topicData } = await supabase
     .from('topics')
-    .select('id, status, author_id')
+    .select('id, status, author_id, title')
     .eq('id', topic_id)
     .single()
 
-  const topic = topicData as Pick<Topic, 'id' | 'status' | 'author_id'> | null
+  const topic = topicData as Pick<Topic, 'id' | 'status' | 'author_id' | 'title'> | null
   if (!topic || topic.status !== 'approved') {
     return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
   }
@@ -137,17 +139,17 @@ export async function POST(request: NextRequest) {
   while (content && (m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
   const uniqueUsernames = [...new Set(mentionedUsernames)]
 
+  let mentionedUsers: { id: string; username: string }[] = []
   if (uniqueUsernames.length > 0) {
     const { data: mentionedProfiles } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, username')
       .in('username', uniqueUsernames)
-    const mentionIds = ((mentionedProfiles ?? []) as { id: string }[])
-      .map((p) => p.id)
-      .filter((id) => id !== user.id)
-    if (mentionIds.length > 0) {
+    mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[])
+      .filter((p) => p.id !== user.id)
+    if (mentionedUsers.length > 0) {
       await service.from('notifications').insert(
-        mentionIds.map((id) => ({
+        mentionedUsers.map(({ id }) => ({
           user_id: id,
           type: 'mention_received',
           reference_id: topic_id,
@@ -156,6 +158,21 @@ export async function POST(request: NextRequest) {
       )
     }
   }
+
+  // Fire emails (parallel, after all DB work is done)
+  const emailTasks: Promise<void>[] = []
+
+  if (topic.author_id !== user.id) {
+    const { data: authorProfile } = await service.from('profiles').select('username').eq('id', topic.author_id).single()
+    const authorUsername = (authorProfile as { username: string } | null)?.username ?? topic.author_id
+    emailTasks.push(emailUserNewReply(topic.author_id, authorUsername, currentUsername, topic.title, topic_id))
+  }
+
+  for (const mentioned of mentionedUsers) {
+    emailTasks.push(emailUserMentioned(mentioned.id, mentioned.username, currentUsername, topic.title, topic_id))
+  }
+
+  await Promise.all(emailTasks)
 
   return NextResponse.json({ success: true, post, images: savedImages, poll: savedPoll })
 }

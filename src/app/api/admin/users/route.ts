@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types/database'
+import { emailUserApproved, emailUserRejected } from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +19,10 @@ export async function POST(request: Request) {
 
     const service = createServiceClient()
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
+
+    const { data: targetProfile } = await service.from('profiles').select('username').eq('id', userId).single()
+    const targetUsername = (targetProfile as { username: string } | null)?.username ?? userId
+
     await service.from('profiles').update({ status: newStatus }).eq('id', userId)
 
     await service.from('notifications').insert({
@@ -26,6 +31,10 @@ export async function POST(request: Request) {
       reference_id: null,
       is_read: false,
     })
+
+    await (action === 'approve'
+      ? emailUserApproved(userId, targetUsername)
+      : emailUserRejected(userId, targetUsername))
 
     return NextResponse.json({ success: true })
   } catch {
