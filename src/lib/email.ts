@@ -24,7 +24,7 @@ function shell(body: string) {
         <tr>
           <td style="padding:16px 32px;border-top:1px solid #1a1a1a;">
             <p style="margin:0;font-size:11px;color:#3a3a3a;line-height:1.5;">
-              Bu e-postayı almak istemiyorsan <a href="mailto:fikretyaman95@gmail.com" style="color:#4a4a4a;">fikretyaman95@gmail.com</a> adresine yazabilirsin.
+              Bu e-postayı almak istemiyorsan <a href="mailto:barekforum@gmail.com" style="color:#4a4a4a;">barekforum@gmail.com</a> adresine yazabilirsin.
             </p>
           </td>
         </tr>
@@ -125,7 +125,7 @@ export async function emailUserRejected(userId: string, username: string) {
   await send(email, 'Üyelik başvurun hakkında — Barek Forum', `
     ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
     ${p('Üyelik başvurun bu sefer onaylanmadı.')}
-    ${p('Sorularınız için <a href="mailto:fikretyaman95@gmail.com" style="color:#c0392b;">fikretyaman95@gmail.com</a> adresine yazabilirsin.')}
+    ${p('Sorularınız için <a href="mailto:barekforum@gmail.com" style="color:#c0392b;">barekforum@gmail.com</a> adresine yazabilirsin.')}
   `)
 }
 
@@ -161,7 +161,7 @@ export async function emailUserTopicRejected(userId: string, username: string, t
     ${p(`Merhaba <strong style="color:#fff">${username}</strong>,`, '#e8e8e8')}
     ${p('Aşağıdaki konu bu sefer onaylanmadı:')}
     ${quote(topicTitle)}
-    ${p('Sorularınız için <a href="mailto:fikretyaman95@gmail.com" style="color:#c0392b;">fikretyaman95@gmail.com</a> adresine yazabilirsin.')}
+    ${p('Sorularınız için <a href="mailto:barekforum@gmail.com" style="color:#c0392b;">barekforum@gmail.com</a> adresine yazabilirsin.')}
   `)
 }
 

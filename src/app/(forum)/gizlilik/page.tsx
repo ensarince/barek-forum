@@ -19,7 +19,7 @@ export default function GizlilikPage() {
         <p>Hesabının silinmesini istiyorsan bir admin ile iletişime geç. Hesabın ve ilişkili veriler kaldırılacaktır.</p>
 
         <h3 className="text-sm font-semibold text-[#c0392b] uppercase tracking-wider mt-4">İletişim</h3>
-        <p>Gizlilik konusunda sorularınız için: <a href="mailto:fikretyaman95@gmail.com" className="text-[#c0392b] hover:underline">fikretyaman95@gmail.com</a></p>
+        <p>Gizlilik konusunda sorularınız için: <a href="mailto:barekforum@gmail.com" className="text-[#c0392b] hover:underline">barekforum@gmail.com</a></p>
       </div>
     </div>
   )

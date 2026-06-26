@@ -17,7 +17,7 @@ export default function ImpressumPage() {
         <p>Tırmanma doğası gereği riskli bir aktivitedir. Bu forumda paylaşılan güzergah bilgileri, koşul raporları ve tavsiyeler bilgilendirme amaçlıdır. Her tırmanıcı kendi güvenliğinden sorumludur.</p>
 
         <h3 className="text-sm font-semibold text-[#c0392b] uppercase tracking-wider mt-4">İletişim</h3>
-        <p>Forum yönetimiyle iletişim: <a href="mailto:fikretyaman95@gmail.com" className="text-[#c0392b] hover:underline">fikretyaman95@gmail.com</a></p>
+        <p>Forum yönetimiyle iletişim: <a href="mailto:barekforum@gmail.com" className="text-[#c0392b] hover:underline">barekforum@gmail.com</a></p>
       </div>
     </div>
   )
