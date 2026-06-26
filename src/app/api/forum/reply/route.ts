@@ -115,13 +115,15 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify parent post author when this is a direct reply to their post
+  // BUG 5 FIX: hoist parentAuthorId so the email section can reference it
+  let parentAuthorId: string | null = null
   if (parent_post_id) {
     const { data: parentData } = await supabase
       .from('posts')
       .select('author_id')
       .eq('id', parent_post_id)
       .single()
-    const parentAuthorId = (parentData as { author_id: string } | null)?.author_id
+    parentAuthorId = (parentData as { author_id: string } | null)?.author_id ?? null
     if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
       await service.from('notifications').insert({
         user_id: parentAuthorId,
@@ -168,7 +170,16 @@ export async function POST(request: NextRequest) {
     emailTasks.push(emailUserNewReply(topic.author_id, authorUsername, currentUsername, topic.title, topic_id))
   }
 
+  // BUG 5 FIX: email the parent post author too (they already got in-app reply_to_post)
+  if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
+    const { data: parentProfile } = await service.from('profiles').select('username').eq('id', parentAuthorId).single()
+    const parentUsername = (parentProfile as { username: string } | null)?.username ?? parentAuthorId
+    emailTasks.push(emailUserNewReply(parentAuthorId, parentUsername, currentUsername, topic.title, topic_id))
+  }
+
   for (const mentioned of mentionedUsers) {
+    // BUG 1 FIX: skip topic author if they already got a reply email above — no duplicates
+    if (mentioned.id === topic.author_id && topic.author_id !== user.id) continue
     emailTasks.push(emailUserMentioned(mentioned.id, mentioned.username, currentUsername, topic.title, topic_id))
   }
 

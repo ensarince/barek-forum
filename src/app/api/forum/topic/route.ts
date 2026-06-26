@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
-import { emailAdminsNewTopic, emailAllUsersAnnouncement } from '@/lib/email'
+import { emailAdminsNewTopic, emailAllUsersAnnouncement, emailUserMentioned } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
           is_read: false,
         }))
       )
-      await emailAdminsNewTopic(adminIds.map((a) => a.id), profile.username, title.trim())
+      // BUG 7 FIX: guard against empty username
+      await emailAdminsNewTopic(adminIds.map((a) => a.id), profile.username || 'kullanıcı', title.trim())
     }
   }
 
@@ -131,6 +132,32 @@ export async function POST(request: NextRequest) {
     }))
     const { data: imgData } = await supabase.from('images').insert(imageInserts).select()
     savedImages = (imgData ?? []) as ImageRow[]
+  }
+
+  // BUG 2 FIX: parse @mentions in opening post content (only for immediately-approved topics
+  // — pending topics aren't visible yet, so notifying mentions before approval makes no sense)
+  const isImmediatelyApproved = isAnnouncement || profile.role === 'admin'
+  if (isImmediatelyApproved) {
+    const mentionRe = /(?<!\w)@([a-zA-Z0-9_]+)/g
+    const mentionedUsernames: string[] = []
+    let mm: RegExpExecArray | null
+    while ((mm = mentionRe.exec(content.trim())) !== null) mentionedUsernames.push(mm[1])
+    const uniqueMentions = [...new Set(mentionedUsernames)]
+    if (uniqueMentions.length > 0) {
+      const svc = createServiceClient()
+      const { data: mentionedProfiles } = await svc.from('profiles').select('id, username').in('username', uniqueMentions)
+      const mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[]).filter((p) => p.id !== user.id)
+      if (mentionedUsers.length > 0) {
+        await svc.from('notifications').insert(
+          mentionedUsers.map(({ id }) => ({ user_id: id, type: 'mention_received', reference_id: topic.id, is_read: false }))
+        )
+        await Promise.all(
+          mentionedUsers.map(({ id, username: mentionedUsername }) =>
+            emailUserMentioned(id, mentionedUsername, profile.username || 'kullanıcı', title.trim(), topic.id)
+          )
+        )
+      }
+    }
   }
 
   return NextResponse.json({ success: true, topicId: topic.id, images: savedImages })

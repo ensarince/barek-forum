@@ -46,11 +46,13 @@ export async function POST(request: Request) {
     const topic = topicData as Pick<Topic, 'author_id' | 'title'> | null
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
-    await service.from('topics').update({
+    // BUG 4 FIX: check update result before sending email
+    const { error: updateError } = await service.from('topics').update({
       status: newStatus,
       approved_by: action === 'approve' ? user.id : null,
       approved_at: action === 'approve' ? new Date().toISOString() : null,
     }).eq('id', topicId)
+    if (updateError) return NextResponse.json({ error: 'Server error' }, { status: 500 })
 
     if (topic) {
       await service.from('notifications').insert({

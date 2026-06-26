@@ -58,9 +58,19 @@ async function getUserEmail(userId: string): Promise<string | null> {
   }
 }
 
+// BUG 6 FIX: single listUsers() call instead of N getUserById calls
 async function getUserEmails(userIds: string[]): Promise<string[]> {
-  const results = await Promise.all(userIds.map(getUserEmail))
-  return results.filter((e): e is string => !!e)
+  if (!userIds.length) return []
+  try {
+    const service = createServiceClient()
+    const { data } = await service.auth.admin.listUsers({ perPage: 1000 })
+    const idSet = new Set(userIds)
+    return (data?.users ?? [])
+      .filter((u) => idSet.has(u.id) && !!u.email)
+      .map((u) => u.email!)
+  } catch {
+    return []
+  }
 }
 
 async function send(to: string | string[], subject: string, body: string) {
@@ -75,8 +85,9 @@ async function send(to: string | string[], subject: string, body: string) {
 async function sendBcc(bcc: string[], subject: string, body: string) {
   if (!process.env.RESEND_API_KEY || !bcc.length) return
   try {
-    // to: the forum address so BCC recipients don't see each other
-    await resend.emails.send({ from: FROM, to: [FROM], bcc, subject, html: shell(body) })
+    // BUG 3 FIX: extract plain email from "Name <email>" display format
+    const toAddr = FROM.replace(/.*<(.+)>.*/, '$1')
+    await resend.emails.send({ from: FROM, to: [toAddr], bcc, subject, html: shell(body) })
   } catch (e) {
     console.error('[email] bcc send failed:', subject, e)
   }
