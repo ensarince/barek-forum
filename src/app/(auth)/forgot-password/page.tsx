@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
 import logoSrc from '@/assets/barek-logo.png'
 
 export default function ForgotPasswordPage() {
@@ -19,14 +18,18 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const redirectTo = `${window.location.origin}/api/auth/callback?next=/reset-password`
-      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, { redirectTo })
-      if (error) {
-        setError('Bir hata oluştu. Email adresini kontrol et.')
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      if (!res.ok) {
+        setError('Bir hata oluştu. Tekrar dene.')
       } else {
         setSent(true)
       }
+    } catch {
+      setError('Bir hata oluştu. Tekrar dene.')
     } finally {
       setLoading(false)
     }

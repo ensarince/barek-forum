@@ -189,6 +189,25 @@ export async function emailUserMentioned(userId: string, username: string, menti
   `)
 }
 
+/** User: password reset link */
+export async function emailPasswordReset(toEmail: string, resetLink: string) {
+  if (!process.env.RESEND_API_KEY) return
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: [toEmail],
+      subject: 'Şifre sıfırlama — Barek Forum',
+      html: shell(`
+        ${p('Şifreni sıfırlamak için aşağıdaki butona tıkla:', '#e8e8e8')}
+        ${btn(resetLink, 'Şifremi Sıfırla')}
+        ${p('Bu bağlantı 1 saat geçerlidir. Eğer bu isteği sen yapmadıysan bu emaili görmezden gelebilirsin.')}
+      `),
+    })
+  } catch (e) {
+    console.error('[email] password reset failed:', e)
+  }
+}
+
 /** Admin: a user submitted a bug report */
 export async function emailAdminBugReport(adminIds: string[], reporterUsername: string, description: string, pageUrl: string) {
   const adminEmails = await getUserEmails(adminIds)
