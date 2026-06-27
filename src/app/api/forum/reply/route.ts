@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
   if (content && content.length > 20000) {
     return NextResponse.json({ error: 'Yanıt çok uzun (max 20.000 karakter).' }, { status: 400 })
   }
+  if ((images ?? []).length > 5) {
+    return NextResponse.json({ error: 'En fazla 5 fotoğraf eklenebilir.' }, { status: 400 })
+  }
   if (!topic_id) {
     return NextResponse.json({ error: 'topic_id gerekli.' }, { status: 400 })
   }

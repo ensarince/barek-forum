@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
   if (tag && tag.trim().length > 50) {
     return NextResponse.json({ error: 'Etiket çok uzun (max 50 karakter).' }, { status: 400 })
   }
+  if ((images ?? []).length > 5) {
+    return NextResponse.json({ error: 'En fazla 5 fotoğraf eklenebilir.' }, { status: 400 })
+  }
 
   // Validate sector if provided
   if (sector_id) {
