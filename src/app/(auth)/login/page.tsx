@@ -1,12 +1,22 @@
 'use client'
 
-import { Suspense, useActionState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import logoSrc from '@/assets/barek-logo.png'
-import { loginAction } from './actions'
 
+const schema = z.object({
+  email: z.string().email('Geçerli bir email girin'),
+  password: z.string().min(6, 'Şifre en az 6 karakter olmalı'),
+})
+
+type FormData = z.infer<typeof schema>
+
+// Isolated to its own Suspense so the form itself is never deferred
 function PasswordResetBanner() {
   const searchParams = useSearchParams()
   if (searchParams.get('reset') !== '1') return null
@@ -14,9 +24,11 @@ function PasswordResetBanner() {
 }
 
 function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAction, null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   // Supabase implicit-flow recovery: tokens land at /login#access_token=...&type=recovery
+  // Redirect immediately to /reset-password so it can pick them up
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.slice(1))
     if (params.get('type') === 'recovery' && params.get('access_token')) {
@@ -24,7 +36,32 @@ function LoginForm() {
     }
   }, [])
 
-  const inputCls = 'w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]'
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  })
+
+  async function onSubmit(data: FormData) {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      })
+      const json = await res.json() as { error?: string }
+      if (!res.ok) {
+        setError(json.error ?? 'Email veya şifre hatalı.')
+        return
+      }
+      // Hard navigation so the browser sends the server-set session cookie
+      window.location.href = '/'
+    } catch {
+      setError('Bir hata oluştu. Lütfen tekrar dene.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <>
@@ -32,37 +69,37 @@ function LoginForm() {
         <PasswordResetBanner />
       </Suspense>
 
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <input
-            name="email"
+            {...register('email')}
             type="email"
             placeholder="Email"
             autoComplete="email"
-            required
-            className={inputCls}
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
           />
+          {errors.email && <p className="text-[#c0392b] text-xs mt-1">{errors.email.message}</p>}
         </div>
 
         <div>
           <input
-            name="password"
+            {...register('password')}
             type="password"
             placeholder="Şifre"
             autoComplete="current-password"
-            required
-            className={inputCls}
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
           />
+          {errors.password && <p className="text-[#c0392b] text-xs mt-1">{errors.password.message}</p>}
         </div>
 
-        {state?.error && <p className="text-[#c0392b] text-sm">{state.error}</p>}
+        {error && <p className="text-[#c0392b] text-sm">{error}</p>}
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={loading}
           className="w-full bg-[#8b1a1a] hover:bg-[#a82020] text-white py-3 text-sm font-semibold uppercase tracking-widest transition-colors disabled:opacity-50"
         >
-          {isPending ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+          {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
         </button>
       </form>
 
