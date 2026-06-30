@@ -30,6 +30,8 @@ const PREVIEW_SECTORS: Sector[] = [
 ]
 
 export default async function ForumLayout({ children }: { children: React.ReactNode }) {
+  const bannerIndex = Math.floor(Date.now() / 86400000) % 4
+
   if (!SUPABASE_CONFIGURED) {
     return (
       <ForumShell
@@ -37,6 +39,7 @@ export default async function ForumLayout({ children }: { children: React.ReactN
         unreadCount={3}
         sectors={PREVIEW_SECTORS}
         sectorCounts={{}}
+        bannerIndex={bannerIndex}
       >
         {children}
       </ForumShell>
@@ -91,6 +94,7 @@ export default async function ForumLayout({ children }: { children: React.ReactN
       unreadCount={unreadNotifications ?? 0}
       sectors={sectors}
       sectorCounts={sectorCounts}
+      bannerIndex={bannerIndex}
     >
       {children}
     </ForumShell>

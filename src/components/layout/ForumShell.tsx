@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { X } from 'lucide-react'
 import Topbar from './Topbar'
 import Sidebar from './Sidebar'
@@ -11,10 +12,11 @@ interface ForumShellProps {
   unreadCount: number
   sectors: Sector[]
   sectorCounts: Record<string, number>
+  bannerIndex: number
   children: React.ReactNode
 }
 
-export default function ForumShell({ profile, unreadCount, sectors, sectorCounts, children }: ForumShellProps) {
+export default function ForumShell({ profile, unreadCount, sectors, sectorCounts, bannerIndex, children }: ForumShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -24,6 +26,16 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         unreadCount={unreadCount}
         onMenuClick={() => setMenuOpen(true)}
       />
+
+      <div className="relative w-full shrink-0 overflow-hidden" style={{ height: '20vh' }}>
+        <Image
+          src={`/bg/bg${bannerIndex + 1}.jpg`}
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+        />
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar — hidden on mobile */}
