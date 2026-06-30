@@ -20,18 +20,33 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className="min-h-[100dvh] flex flex-col">
+      {/* Topbar — sticks to top as page scrolls */}
+      <div className="sticky top-0 z-40">
+        <Topbar
+          profile={profile}
+          unreadCount={unreadCount}
+          onMenuClick={() => setMenuOpen(true)}
+        />
+      </div>
 
-      <Topbar
-        profile={profile}
-        unreadCount={unreadCount}
-        onMenuClick={() => setMenuOpen(true)}
-      />
+      {/* Full-width banner — scrolls with page */}
+      <div className="relative w-full overflow-hidden shrink-0" style={{ height: '20vh' }}>
+        <Image
+          src={`/bg/bg${bannerIndex + 1}.jpg`}
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        {/* Gradient fades banner into the dark background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0d0d0d]" />
+      </div>
 
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Desktop sidebar — hidden on mobile */}
-        <div className="hidden sm:flex shrink-0">
+      {/* Sidebar + main — fill remaining page height */}
+      <div className="flex flex-1">
+        {/* Desktop sidebar — sticky below topbar (h-16 = 4rem) */}
+        <div className="hidden sm:flex shrink-0 sticky top-16 self-start h-[calc(100dvh-4rem)]">
           <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
         </div>
 
@@ -61,16 +76,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="relative w-full overflow-hidden" style={{ height: '10vh' }}>
-            <Image
-              src={`/bg/bg${bannerIndex + 1}.jpg`}
-              alt=""
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </div>
+        <main className="flex-1 bg-background">
           {children}
         </main>
       </div>
