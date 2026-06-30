@@ -21,21 +21,13 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
 
   return (
     <div className="flex flex-col h-[100dvh]">
+
       <Topbar
         profile={profile}
         unreadCount={unreadCount}
         onMenuClick={() => setMenuOpen(true)}
       />
 
-      <div className="relative w-full shrink-0 overflow-hidden" style={{ height: '20vh' }}>
-        <Image
-          src={`/bg/bg${bannerIndex + 1}.jpg`}
-          alt=""
-          fill
-          className="object-cover object-center"
-          priority
-        />
-      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar — hidden on mobile */}
@@ -70,6 +62,15 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         )}
 
         <main className="flex-1 overflow-y-auto bg-background">
+          <div className="relative w-full overflow-hidden" style={{ height: '10vh' }}>
+            <Image
+              src={`/bg/bg${bannerIndex + 1}.jpg`}
+              alt=""
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </div>
           {children}
         </main>
       </div>
