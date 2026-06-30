@@ -31,7 +31,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
       </div>
 
       {/* Full-width banner — scrolls with page */}
-      <div className="relative w-full overflow-hidden shrink-0" style={{ height: '20vh' }}>
+      <div className="relative w-full overflow-hidden shrink-0 h-[12vh] sm:h-[20vh]">
         <Image
           src={`/bg/bg${bannerIndex + 1}.jpg`}
           alt=""
