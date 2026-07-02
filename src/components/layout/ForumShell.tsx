@@ -8,8 +8,8 @@ import Sidebar from './Sidebar'
 import type { Profile, Sector } from '@/types/database'
 
 const BANNERS = [
-  '/bg/bg1.jpg',
-  '/bg/bg2.jpg',
+  '/bg/bg1.jpeg',
+  '/bg/bg2.jpeg',
   '/bg/bg3.jpeg',
   '/bg/bg4.jpeg',
   '/bg/bg5.jpeg',
