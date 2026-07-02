@@ -30,7 +30,7 @@ const PREVIEW_SECTORS: Sector[] = [
 ]
 
 export default async function ForumLayout({ children }: { children: React.ReactNode }) {
-  const bannerIndex = Math.floor(Date.now() / 86400000) % 4
+  const bannerIndex = Math.floor(Date.now() / 86400000) % 6
 
   if (!SUPABASE_CONFIGURED) {
     return (

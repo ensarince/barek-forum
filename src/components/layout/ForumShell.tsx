@@ -2,10 +2,19 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Topbar from './Topbar'
 import Sidebar from './Sidebar'
 import type { Profile, Sector } from '@/types/database'
+
+const BANNERS = [
+  '/bg/bg1.jpg',
+  '/bg/bg2.jpg',
+  '/bg/bg3.jpeg',
+  '/bg/bg4.jpeg',
+  '/bg/bg5.jpeg',
+  '/bg/bg6.jpeg',
+]
 
 interface ForumShellProps {
   profile: Profile
@@ -18,10 +27,13 @@ interface ForumShellProps {
 
 export default function ForumShell({ profile, unreadCount, sectors, sectorCounts, bannerIndex, children }: ForumShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(bannerIndex)
+
+  function prev() { setActiveIndex((i) => (i - 1 + BANNERS.length) % BANNERS.length) }
+  function next() { setActiveIndex((i) => (i + 1) % BANNERS.length) }
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
-      {/* Topbar — sticks to top as page scrolls */}
       <div className="sticky top-0 z-40">
         <Topbar
           profile={profile}
@@ -30,27 +42,53 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         />
       </div>
 
-      {/* Full-width banner — scrolls with page */}
-      <div className="relative w-full overflow-hidden shrink-0 h-[12vh] sm:h-[20vh]">
+      {/* Full-width banner with hover-reveal carousel controls */}
+      <div className="group relative w-full overflow-hidden shrink-0 h-[12vh] sm:h-[20vh]">
         <Image
-          src={`/bg/bg${bannerIndex + 1}.jpg`}
+          src={BANNERS[activeIndex]}
           alt=""
           fill
           className="object-cover object-center"
           priority
         />
-        {/* Gradient fades banner into the dark background */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0d0d0d]" />
+
+        {/* Prev button */}
+        <button
+          onClick={prev}
+          aria-label="Önceki"
+          className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-1"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        {/* Next button */}
+        <button
+          onClick={next}
+          aria-label="Sonraki"
+          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-1"
+        >
+          <ChevronRight size={18} />
+        </button>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {BANNERS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              aria-label={`Görsel ${i + 1}`}
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeIndex ? 'bg-white' : 'bg-white/40 hover:bg-white/70'}`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Sidebar + main — fill remaining page height */}
       <div className="flex flex-1">
-        {/* Desktop sidebar — sticky below topbar (h-16 = 4rem) */}
         <div className="hidden sm:flex shrink-0 sticky top-16 self-start h-[calc(100dvh-4rem)]">
           <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
         </div>
 
-        {/* Mobile drawer overlay */}
         {menuOpen && (
           <div className="fixed inset-0 z-50 sm:hidden">
             <div
