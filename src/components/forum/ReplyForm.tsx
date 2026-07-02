@@ -56,6 +56,11 @@ export default function ReplyForm({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const mentionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
+
   function insertEmoji(emoji: string) {
     const el = textareaRef.current
     if (!el) { setContent((c) => c + emoji); return }
@@ -66,12 +71,14 @@ export default function ReplyForm({
     requestAnimationFrame(() => {
       el.focus()
       el.setSelectionRange(start + emoji.length, start + emoji.length)
+      autoResize(el)
     })
   }
 
   function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const val = e.target.value
     setContent(val)
+    autoResize(e.target)
     const cursor = e.target.selectionStart ?? val.length
     const textBefore = val.slice(0, cursor)
     const match = textBefore.match(/(?:^|[\s\n])@(\w*)$/)
@@ -115,6 +122,7 @@ export default function ReplyForm({
     requestAnimationFrame(() => {
       el.focus()
       el.setSelectionRange(newCursor, newCursor)
+      autoResize(el)
     })
   }
 
@@ -193,6 +201,7 @@ export default function ReplyForm({
       setPendingFiles([])
       setPendingGifs([])
       setWithPoll(false)
+      if (textareaRef.current) textareaRef.current.style.height = 'auto'
       onSuccess(optimisticPost, data.images ?? [], data.poll ?? null)
       onCancel?.()
     } catch {
@@ -219,10 +228,10 @@ export default function ReplyForm({
               setMentionUsers([])
             }
           }}
-          rows={compact ? 3 : 4}
           placeholder="Yanıtını yaz..."
           autoFocus={compact}
-          className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
+          className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none overflow-y-auto"
+          style={{ minHeight: compact ? '80px' : '100px', maxHeight: '400px' }}
         />
         {mentionQuery !== null && (
           <MentionDropdown
