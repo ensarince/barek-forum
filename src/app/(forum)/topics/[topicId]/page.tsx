@@ -265,7 +265,7 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
           </span>
         ) : null}
       </div>
-      <h1 className="text-xl font-bold text-white leading-snug">{topic.title}</h1>
+      <h1 className="text-xl font-bold text-white leading-snug break-words">{topic.title}</h1>
       <p className="text-[11px] text-[#6b6b6b] mt-1">
         {topic.author?.username ? (
           <Link href={`/profile/${topic.author.username}`} className="hover:text-white hover:underline transition-colors">{topic.author.username}</Link>

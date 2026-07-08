@@ -115,12 +115,12 @@ export default async function SectorPage({ params }: PageProps) {
                 <p className={`text-sm leading-snug truncate ${isUnread ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>
                   {topic.title}
                 </p>
-                <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#6b6b6b]">
-                  <span>{topic.author?.username ?? 'bilinmiyor'}</span>
+                <div className="flex items-center gap-x-3 gap-y-0 flex-wrap mt-1.5 text-[11px] text-[#6b6b6b]">
+                  <span className="truncate max-w-[10rem]">{topic.author?.username ?? 'bilinmiyor'}</span>
                   <span>·</span>
-                  <span className="flex items-center gap-1"><MessageSquare size={11} />{replyCount}</span>
+                  <span className="flex items-center gap-1 shrink-0"><MessageSquare size={11} />{replyCount}</span>
                   <span>·</span>
-                  <span>{formatDistanceToNow(topic.updated_at)}</span>
+                  <span className="shrink-0">{formatDistanceToNow(topic.updated_at)}</span>
                 </div>
               </div>
             </Link>

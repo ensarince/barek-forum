@@ -114,7 +114,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
           </div>
         )}
 
-        <main className="flex-1 bg-background">
+        <main className="flex-1 bg-background min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>
