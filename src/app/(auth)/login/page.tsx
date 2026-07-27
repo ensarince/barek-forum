@@ -44,8 +44,12 @@ function LoginForm() {
     setLoading(true)
     setError(null)
     try {
+      // credentials must be explicit: some iOS Safari versions silently drop the
+      // Set-Cookie header from a same-origin fetch() response unless this is set,
+      // even though the fetch spec default is already 'same-origin'.
       const res = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: data.email, password: data.password }),
       })
