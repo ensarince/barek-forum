@@ -29,6 +29,26 @@ const PREVIEW_SECTORS: Sector[] = [
   { id: '4', name: 'Sağ Kanat', description: null, order_index: 3 },
 ]
 
+function ConnectionError() {
+  return (
+    <div className="min-h-[100dvh] flex items-center justify-center bg-[#0d0d0d] px-4">
+      <div className="text-center max-w-xs">
+        <p className="text-[#e8e8e8] text-sm">Bağlantı kurulamadı.</p>
+        <p className="text-[#6b6b6b] text-xs mt-2">Hesabında bir sorun yok — sunucuya ulaşılamadı.</p>
+        {/* Plain anchor on purpose — a client-side <Link> to the route we are already
+            on would not re-run this layout, and a full reload is the retry. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a
+          href="/"
+          className="inline-block mt-5 bg-[#8b1a1a] hover:bg-[#a82020] text-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors"
+        >
+          Tekrar Dene
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export default async function ForumLayout({ children }: { children: React.ReactNode }) {
   const bannerIndex = Math.floor(Date.now() / 86400000) % 6
 
@@ -52,11 +72,25 @@ export default async function ForumLayout({ children }: { children: React.ReactN
   // Middleware already redirects unauthenticated users; this is a safety fallback
   if (!user) redirect('/login')
 
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  // A dropped request looks exactly like a missing profile row, which would send
+  // an approved member to /pending ("hesabın onay bekliyor") and read to them as a
+  // failed login. Mobile connections drop these often enough to matter, so retry
+  // once and show a retry screen rather than guessing at their status.
+  let profileData = null
+  let profileFailed = false
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    if (!error) { profileData = data; profileFailed = false; break }
+    profileFailed = error.code !== 'PGRST116' // PGRST116 = no row, genuinely absent
+    if (!profileFailed) break
+  }
+
+  if (profileFailed) return <ConnectionError />
 
   const profile = profileData as Profile | null
 

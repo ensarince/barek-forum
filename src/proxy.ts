@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// @supabase/ssr stores the session as sb-<project-ref>-auth-token, split into
+// .0/.1/... chunks when it outgrows the 4KB cookie limit.
+const AUTH_COOKIE = /^sb-.+-auth-token(\.\d+)?$/
+
 export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -28,47 +32,79 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Any redirect MUST carry the cookies Supabase just wrote, otherwise a rotated
+  // refresh token never reaches the browser. The old one is already revoked
+  // server-side at that point, so the session dies and every later request
+  // bounces back here — a permanent login loop until cookies are cleared by hand.
+  function redirectTo(path: string) {
+    const response = NextResponse.redirect(new URL(path, request.url))
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    return response
+  }
+
   const { pathname } = request.nextUrl
+
+  // Session diagnostics have to stay reachable even when auth is broken
+  if (pathname.startsWith('/debug')) return supabaseResponse
 
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password')
   const isLimboRoute = pathname.startsWith('/pending') || pathname.startsWith('/rejected')
   const isAdminRoute = pathname.startsWith('/admin')
 
-  // Not logged in → send to login (except auth routes)
-  if (!user && !isAuthRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  let user = null
+  let lookupFailed = false
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    user = data.user
+    if (error) lookupFailed = true
+  } catch {
+    lookupFailed = true
+  }
+
+  if (!user) {
+    if (isAuthRoute) return supabaseResponse
+
+    // The proxy is only an optimistic check — Next.js docs warn against using it
+    // for real session management, and every layout re-verifies with getUser()
+    // before rendering. So when the browser did send a session but the lookup
+    // failed, let the request through instead of bouncing to /login: on mobile
+    // connections these calls drop often enough to look like a broken login.
+    const hasAuthCookie = request.cookies.getAll().some((c) => AUTH_COOKIE.test(c.name))
+    if (hasAuthCookie && lookupFailed) return supabaseResponse
+
+    return redirectTo('/login')
   }
 
   // Logged in on login/signup → redirect to forum (but allow password reset pages)
-  const isLoginOrSignup = pathname.startsWith('/login') || pathname.startsWith('/signup')
-  if (user && isLoginOrSignup) {
+  if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('status, role')
       .eq('id', user.id)
       .single()
 
-    if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
-    if (profile?.status === 'rejected') return NextResponse.redirect(new URL('/rejected', request.url))
-    return NextResponse.redirect(new URL('/', request.url))
+    if (profile?.status === 'pending') return redirectTo('/pending')
+    if (profile?.status === 'rejected') return redirectTo('/rejected')
+    return redirectTo('/')
   }
 
   // Logged in, check profile status on protected routes
-  if (user && !isLimboRoute) {
+  if (!isLimboRoute) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('status, role')
       .eq('id', user.id)
       .single()
 
-    if (profile?.status === 'pending') return NextResponse.redirect(new URL('/pending', request.url))
-    if (profile?.status === 'rejected') return NextResponse.redirect(new URL('/rejected', request.url))
+    if (profile?.status === 'pending') return redirectTo('/pending')
+    if (profile?.status === 'rejected') return redirectTo('/rejected')
 
-    // Admin-only routes
-    if (isAdminRoute && profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
+    // Admin-only routes. Skipped when the profile lookup came back empty so a
+    // dropped request can't lock an admin out — /admin/layout.tsx checks the role
+    // again server-side before rendering anything.
+    if (isAdminRoute && profile && profile.role !== 'admin') {
+      return redirectTo('/')
     }
   }
 
