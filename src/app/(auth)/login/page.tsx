@@ -58,7 +58,9 @@ function LoginForm() {
         setError(json.error ?? 'Email veya şifre hatalı.')
         return
       }
-      // Hard navigation so the browser sends the server-set session cookie
+      // Hard navigation so the browser sends the server-set session cookie.
+      // Not a React state mutation, so the compiler's rule doesn't apply here.
+      // eslint-disable-next-line react-hooks/immutability
       window.location.href = '/'
     } catch {
       setError('Bir hata oluştu. Lütfen tekrar dene.')
