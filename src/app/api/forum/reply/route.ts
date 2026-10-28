@@ -103,10 +103,16 @@ export async function POST(request: NextRequest) {
       topic_id: null,
     }))
 
-    const { data: imgData } = await supabase
+    const { data: imgData, error: imgError } = await supabase
       .from('images')
       .insert(imageInserts)
       .select()
+
+    // Roll back the just-created post so a failed image save doesn't leave an empty/partial reply
+    if (imgError) {
+      await createServiceClient().from('posts').delete().eq('id', post.id)
+      return NextResponse.json({ error: 'Fotoğraflar kaydedilemedi, tekrar dene.' }, { status: 500 })
+    }
 
     savedImages = (imgData ?? []) as ImageRow[]
   }
