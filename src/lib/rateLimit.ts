@@ -2,10 +2,47 @@
 // Env: UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN (or the KV_REST_API_* names the Vercel integration sets).
 // Without them, or if Redis is unreachable, it falls back to a per-instance in-memory limiter.
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN
+const REDIS_URL = (process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL)?.trim()
+const REDIS_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN)?.trim()
 
 const store = new Map<string, { count: number; resetAt: number }>()
+
+// Log once per server instance which backend is in use (never the values themselves)
+let backendLogged = false
+function logBackendOnce() {
+  if (backendLogged) return
+  backendLogged = true
+  if (REDIS_URL && REDIS_TOKEN) {
+    let host = 'invalid URL'
+    try { host = new URL(REDIS_URL).host } catch { /* malformed value, e.g. pasted with quotes */ }
+    console.log(`[rateLimit] using Upstash (${host})`)
+  } else {
+    console.warn(`[rateLimit] Upstash env missing (url: ${!!REDIS_URL}, token: ${!!REDIS_TOKEN}) — using in-memory fallback`)
+  }
+}
+
+/** Live check for the admin debug route: env presence + a real call to Upstash. */
+export async function rateLimitHealth() {
+  const result = {
+    urlSet: !!REDIS_URL,
+    tokenSet: !!REDIS_TOKEN,
+    urlSource: process.env.UPSTASH_REDIS_REST_URL ? 'UPSTASH_REDIS_REST_URL' : process.env.KV_REST_API_URL ? 'KV_REST_API_URL' : null,
+    urlLooksRight: !!REDIS_URL && REDIS_URL.startsWith('https://') && !REDIS_URL.includes('"'),
+    tokenHasQuotes: !!REDIS_TOKEN && REDIS_TOKEN.includes('"'),
+    ping: null as string | null,
+    error: null as string | null,
+  }
+  if (!REDIS_URL || !REDIS_TOKEN) return result
+  try {
+    const res = await fetch(`${REDIS_URL}/ping`, { headers: { Authorization: `Bearer ${REDIS_TOKEN}` }, cache: 'no-store' })
+    const body = await res.json().catch(() => ({})) as { result?: string; error?: string }
+    if (res.ok) result.ping = body.result ?? 'ok'
+    else result.error = `HTTP ${res.status}: ${body.error ?? 'unknown'}`
+  } catch (e) {
+    result.error = e instanceof Error ? e.message : String(e)
+  }
+  return result
+}
 
 function memoryRateLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now()
@@ -23,6 +60,7 @@ function memoryRateLimit(key: string, limit: number, windowMs: number): boolean 
 
 /** Returns true if the request is allowed, false if it should be blocked. */
 export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  logBackendOnce()
   if (!REDIS_URL || !REDIS_TOKEN) return memoryRateLimit(key, limit, windowMs)
 
   try {
