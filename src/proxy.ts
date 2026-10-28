@@ -44,8 +44,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Session diagnostics have to stay reachable even when auth is broken
-  if (pathname.startsWith('/debug')) return supabaseResponse
+  // Session diagnostics have to stay reachable even when auth is broken. Still refresh
+  // the session here: a refresh inside the Server Component can't write cookies, so the
+  // rotated token would be lost and the session killed.
+  if (pathname.startsWith('/debug')) {
+    try { await supabase.auth.getUser() } catch { /* page shows the broken state */ }
+    return supabaseResponse
+  }
 
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password')
@@ -73,8 +78,13 @@ export async function proxy(request: NextRequest) {
     const hasAuthCookie = request.cookies.getAll().some((c) => AUTH_COOKIE.test(c.name))
     if (hasAuthCookie && lookupFailed) return supabaseResponse
 
-    return redirectTo('/login')
+    // Remember where they were going (e.g. a topic link from an email) for after login
+    const next = pathname === '/' ? '' : `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`
+    return redirectTo(`/login${next}`)
   }
+
+  // Password reset must work for any logged-in status (pending users too)
+  if (pathname.startsWith('/reset-password')) return supabaseResponse
 
   // Logged in on login/signup → redirect to forum (but allow password reset pages)
   if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {

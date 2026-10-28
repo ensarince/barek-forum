@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Topic } from '@/types/database'
 import { emailUserTopicApproved, emailUserTopicRejected } from '@/lib/email'
+import { notifyTopicMentions } from '@/lib/mentions'
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -46,8 +47,8 @@ export async function POST(request: Request) {
     if (!topicId || (action !== 'approve' && action !== 'reject')) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
     const service = createServiceClient()
-    const { data: topicData } = await service.from('topics').select('author_id, title, status, is_deleted').eq('id', topicId).single()
-    const topic = topicData as Pick<Topic, 'author_id' | 'title' | 'status' | 'is_deleted'> | null
+    const { data: topicData } = await service.from('topics').select('author_id, title, content, status, is_deleted').eq('id', topicId).single()
+    const topic = topicData as Pick<Topic, 'author_id' | 'title' | 'content' | 'status' | 'is_deleted'> | null
     if (!topic || topic.is_deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
@@ -76,6 +77,17 @@ export async function POST(request: Request) {
       await (action === 'approve'
         ? emailUserTopicApproved(topic.author_id, authorUsername, topic.title, topicId)
         : emailUserTopicRejected(topic.author_id, authorUsername, topic.title))
+
+      // Mentions in moderated topics notify now that the topic is live
+      if (action === 'approve') {
+        await notifyTopicMentions({
+          topicId,
+          title: topic.title,
+          content: topic.content,
+          authorId: topic.author_id,
+          authorUsername,
+        })
+      }
     }
 
     return NextResponse.json({ success: true })

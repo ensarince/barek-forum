@@ -71,11 +71,16 @@ async function getUserEmails(userIds: string[]): Promise<string[]> {
   if (!userIds.length) return []
   try {
     const service = createServiceClient()
-    const { data } = await service.auth.admin.listUsers({ perPage: 1000 })
     const idSet = new Set(userIds)
-    return (data?.users ?? [])
-      .filter((u) => idSet.has(u.id) && !!u.email)
-      .map((u) => u.email!)
+    const emails: string[] = []
+    // listUsers is paginated — walk every page, not just the first 1000 users
+    for (let page = 1; ; page++) {
+      const { data } = await service.auth.admin.listUsers({ page, perPage: 1000 })
+      const users = data?.users ?? []
+      for (const u of users) if (idSet.has(u.id) && u.email) emails.push(u.email)
+      if (users.length < 1000) break
+    }
+    return emails
   } catch {
     return []
   }
@@ -84,19 +89,26 @@ async function getUserEmails(userIds: string[]): Promise<string[]> {
 async function send(to: string | string[], subject: string, body: string) {
   if (!process.env.RESEND_API_KEY) return
   try {
-    await resend.emails.send({ from: FROM, to: Array.isArray(to) ? to : [to], subject, html: shell(body) })
+    const { error } = await resend.emails.send({ from: FROM, to: Array.isArray(to) ? to : [to], subject, html: shell(body) })
+    if (error) console.error('[email] send failed:', subject, error)
   } catch (e) {
     console.error('[email] send failed:', subject, e)
   }
 }
 
+// Resend allows max 50 recipients per email (to + bcc), so send in chunks
+const BCC_CHUNK = 49
+
 async function sendBcc(bcc: string[], subject: string, body: string) {
   if (!process.env.RESEND_API_KEY || !bcc.length) return
-  try {
-    const toAddr = FROM.replace(/.*<(.+)>.*/, '$1')
-    await resend.emails.send({ from: FROM, to: [toAddr], bcc, subject, html: shell(body) })
-  } catch (e) {
-    console.error('[email] bcc send failed:', subject, e)
+  const toAddr = FROM.replace(/.*<(.+)>.*/, '$1')
+  for (let i = 0; i < bcc.length; i += BCC_CHUNK) {
+    try {
+      const { error } = await resend.emails.send({ from: FROM, to: [toAddr], bcc: bcc.slice(i, i + BCC_CHUNK), subject, html: shell(body) })
+      if (error) console.error('[email] bcc send failed:', subject, error)
+    } catch (e) {
+      console.error('[email] bcc send failed:', subject, e)
+    }
   }
 }
 

@@ -77,10 +77,15 @@ export default async function TopicPage({ params }: PageProps) {
     .from('posts')
     .select('*, author:profiles!posts_author_id_fkey(username, avatar_url)')
     .eq('topic_id', topicId)
-    .eq('is_deleted', false)
     .order('created_at', { ascending: true })
 
-  const posts = (postsData ?? []) as PostWithAuthor[]
+  // Keep deleted posts only when live replies hang under them (shown as "[silindi]"),
+  // otherwise those replies would vanish. Their content is stripped server-side.
+  const allPosts = (postsData ?? []) as PostWithAuthor[]
+  const liveParentIds = new Set(allPosts.filter((p) => !p.is_deleted && p.parent_post_id).map((p) => p.parent_post_id))
+  const posts = allPosts
+    .filter((p) => !p.is_deleted || liveParentIds.has(p.id))
+    .map((p) => (p.is_deleted ? { ...p, content: '' } : p))
 
   // Fetch images for the opening post (topic-level, post_id IS NULL)
   const { data: topicImagesData } = await supabase
@@ -91,7 +96,7 @@ export default async function TopicPage({ params }: PageProps) {
   const topicImages = (topicImagesData ?? []) as ImageRow[]
 
   // Fetch images for all posts
-  const postIds = posts.map((p) => p.id)
+  const postIds = posts.filter((p) => !p.is_deleted).map((p) => p.id)
   const initialImages: Record<string, ImageRow[]> = {}
   if (postIds.length > 0) {
     const { data: imagesData } = await supabase

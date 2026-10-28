@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { MessageSquare, Pin } from 'lucide-react'
 import type { TopicWithMeta } from '@/types/database'
+import { getReplyCounts } from '@/lib/counts'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -26,23 +27,11 @@ export default async function AnnouncementsPage() {
     .eq('type', 'announcement')
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
+    .limit(100)
 
   const topics = (topicsRaw ?? []) as TopicWithMeta[]
 
-  const topicIds = topics.map((t) => t.id)
-  const safeIds = topicIds.length > 0 ? topicIds : ['_none']
-
-  const { data: replyCountsRaw } = await supabase
-    .from('posts')
-    .select('topic_id')
-    .in('topic_id', safeIds)
-    .eq('is_deleted', false)
-
-  const replyCounts = (replyCountsRaw ?? []) as { topic_id: string }[]
-  const countMap = replyCounts.reduce<Record<string, number>>((acc, p) => {
-    acc[p.topic_id] = (acc[p.topic_id] ?? 0) + 1
-    return acc
-  }, {})
+  const countMap = await getReplyCounts(supabase, topics.map((t) => t.id))
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">

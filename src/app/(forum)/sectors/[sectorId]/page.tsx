@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { ArrowLeft, MessageSquare } from 'lucide-react'
 import RefreshButton from '@/components/forum/RefreshButton'
+import { getReplyCounts } from '@/lib/counts'
 import type { TopicWithMeta, Sector, TopicRead } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -50,17 +51,7 @@ export default async function SectorPage({ params }: PageProps) {
   const topicIds = topics.map((t) => t.id)
   const safeIds = topicIds.length > 0 ? topicIds : ['_none']
 
-  const { data: replyCountsRaw } = await supabase
-    .from('posts')
-    .select('topic_id')
-    .in('topic_id', safeIds)
-    .eq('is_deleted', false)
-
-  const replyCounts = (replyCountsRaw ?? []) as { topic_id: string }[]
-  const countMap = replyCounts.reduce<Record<string, number>>((acc, p) => {
-    acc[p.topic_id] = (acc[p.topic_id] ?? 0) + 1
-    return acc
-  }, {})
+  const countMap = await getReplyCounts(supabase, topicIds)
 
   const { data: readsRaw } = await supabase
     .from('topic_reads')

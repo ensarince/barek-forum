@@ -45,60 +45,64 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
 
     setLoading(true)
 
-    // Upload images first
-    const uploadedImages: { url: string; publicId: string }[] = []
-    for (let i = 0; i < pendingFiles.length; i++) {
-      setUploadStatus(`Fotoğraflar yükleniyor... (${i + 1}/${pendingFiles.length})`)
-      const fd = new FormData()
-      fd.append('file', pendingFiles[i])
-      const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
-      const upData = await upRes.json() as { url?: string; publicId?: string; error?: string }
-      if (!upRes.ok) {
-        setError(upData.error ?? 'Fotoğraf yüklenemedi.')
-        setLoading(false)
-        setUploadStatus(null)
+    // try/finally so a network error or a non-JSON response never leaves the form stuck on "Gönderiliyor..."
+    try {
+      // Upload images first
+      const uploadedImages: { url: string; publicId: string }[] = []
+      for (let i = 0; i < pendingFiles.length; i++) {
+        setUploadStatus(`Fotoğraflar yükleniyor... (${i + 1}/${pendingFiles.length})`)
+        const fd = new FormData()
+        fd.append('file', pendingFiles[i])
+        const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
+        const upData = await upRes.json().catch(() => ({})) as { url?: string; publicId?: string; error?: string }
+        if (!upRes.ok) {
+          setError(upData.error ?? (upRes.status === 413 ? 'Fotoğraf çok büyük.' : 'Fotoğraf yüklenemedi.'))
+          return
+        }
+        uploadedImages.push({ url: upData.url!, publicId: upData.publicId! })
+      }
+      setUploadStatus(null)
+
+      const res = await fetch('/api/forum/topic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          content: content.trim(),
+          sector_id: sectorId ?? undefined,
+          tag: tag ?? undefined,
+          with_poll: withPoll,
+          images: uploadedImages,
+        }),
+      })
+
+      const resData = await res.json().catch(() => ({})) as { topicId?: string; error?: string }
+
+      if (!res.ok) {
+        setError(resData.error ?? 'Bir hata oluştu.')
         return
       }
-      uploadedImages.push({ url: upData.url!, publicId: upData.publicId! })
-    }
-    setUploadStatus(null)
 
-    const res = await fetch('/api/forum/topic', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: title.trim(),
-        content: content.trim(),
-        sector_id: sectorId ?? undefined,
-        tag: tag ?? undefined,
-        with_poll: withPoll,
-        images: uploadedImages,
-      }),
-    })
+      if (isAdmin && resData.topicId) {
+        router.push(`/topics/${resData.topicId}`)
+        return
+      }
 
-    const resData = await res.json().catch(() => ({})) as { topicId?: string; error?: string }
-
-    if (!res.ok) {
-      setError(resData.error ?? 'Bir hata oluştu.')
+      setSubmitted(true)
+    } catch {
+      setError('Sunucuya bağlanılamadı.')
+    } finally {
       setLoading(false)
-      return
+      setUploadStatus(null)
     }
-
-    if (isAdmin && resData.topicId) {
-      router.push(`/topics/${resData.topicId}`)
-      return
-    }
-
-    setSubmitted(true)
-    setLoading(false)
   }
 
   if (submitted) {
     return (
       <div className="max-w-2xl mx-auto py-16 px-4 text-center">
-        <div className="text-[#8b1a1a] text-4xl mb-4">⧖</div>
-        <h2 className="text-lg font-bold text-white uppercase tracking-widest mb-2">Konu Gönderildi</h2>
-        <p className="text-[#6b6b6b] text-sm leading-relaxed">
+        <div className="text-[#e05a4a] text-4xl mb-4" aria-hidden="true">⧖</div>
+        <h1 className="text-lg font-bold text-white uppercase tracking-widest mb-2">Konu Gönderildi</h1>
+        <p className="text-[#8a8a8a] text-sm leading-relaxed">
           Konun admin onayı bekliyor. Onaylandığında forumda yayınlanacak.
         </p>
       </div>
@@ -107,26 +111,28 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
 
   return (
     <div className="max-w-2xl mx-auto py-4 sm:py-6 px-4">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Yeni Konu</h2>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Yeni Konu</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
         <div>
-          <label className="block text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-1">Başlık</label>
+          <label htmlFor="topic-title" className="block text-xs uppercase tracking-[0.15em] text-[#8a8a8a] mb-1">Başlık</label>
           <input
+            id="topic-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Konu başlığı..."
-            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+            maxLength={200}
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
           />
         </div>
 
         {/* Tag selector */}
-        <div>
-          <label className="block text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-2">
-            Etiket <span className="normal-case tracking-normal text-[#4a4a4a] ml-1">— isteğe bağlı</span>
-          </label>
+        <fieldset>
+          <legend className="block text-xs uppercase tracking-[0.15em] text-[#8a8a8a] mb-2">
+            Etiket <span className="normal-case tracking-normal text-[#8a8a8a] ml-1">— isteğe bağlı</span>
+          </legend>
 
           {/* General tags */}
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -135,10 +141,11 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
                 key={t}
                 type="button"
                 onClick={() => selectGeneralTag(t)}
-                className={`px-3 py-1.5 text-xs border transition-colors ${
+                aria-pressed={tag === t}
+                className={`px-3 py-2 text-xs border transition-colors ${
                   tag === t
                     ? 'bg-[#8b1a1a] border-[#8b1a1a] text-white'
-                    : 'bg-transparent border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+                    : 'bg-transparent border-[#2a2a2a] text-[#8a8a8a] hover:border-[#8b1a1a] hover:text-white'
                 }`}
               >
                 {t}
@@ -148,7 +155,7 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
 
           {/* Sector divider */}
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] uppercase tracking-wider text-[#4a4a4a]">Sektörler</span>
+            <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a]">Sektörler</span>
             <div className="flex-1 border-t border-[#1e1e1e]" />
           </div>
 
@@ -159,55 +166,62 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
                 key={s.id}
                 type="button"
                 onClick={() => selectSector(s.id)}
-                className={`px-3 py-1.5 text-xs border transition-colors ${
+                aria-pressed={sectorId === s.id}
+                className={`px-3 py-2 text-xs border transition-colors ${
                   sectorId === s.id
                     ? 'bg-[#8b1a1a] border-[#8b1a1a] text-white'
-                    : 'bg-transparent border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+                    : 'bg-transparent border-[#2a2a2a] text-[#8a8a8a] hover:border-[#8b1a1a] hover:text-white'
                 }`}
               >
                 {s.name}
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         {/* Content */}
         <div>
-          <label className="block text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-1">Açıklama</label>
+          <label htmlFor="topic-content" className="block text-xs uppercase tracking-[0.15em] text-[#8a8a8a] mb-1">Açıklama</label>
           <textarea
+            id="topic-content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={8}
             placeholder="Konuyu detaylı anlat..."
-            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b] resize-none"
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a] resize-none"
           />
           <div className="mt-2">
             <ImageUpload onImagesChange={setPendingFiles} maxImages={5} />
           </div>
-          {uploadStatus && <p className="text-[#6b6b6b] text-xs mt-1">{uploadStatus}</p>}
+          {uploadStatus && <p aria-live="polite" className="text-[#8a8a8a] text-xs mt-1">{uploadStatus}</p>}
         </div>
 
         {/* Poll toggle */}
         <div>
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div
-              onClick={() => setWithPoll(!withPoll)}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={withPoll}
+            onClick={() => setWithPoll(!withPoll)}
+            className="flex items-center gap-3 py-1 group"
+          >
+            <span
               className={`w-10 h-5 border transition-colors flex items-center shrink-0 ${withPoll ? 'bg-[#8b1a1a] border-[#8b1a1a]' : 'bg-[#0d0d0d] border-[#2a2a2a]'}`}
             >
-              <div className={`w-3 h-3 bg-white transition-transform mx-1 ${withPoll ? 'translate-x-4' : 'translate-x-0'}`} />
-            </div>
-            <span className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b] group-hover:text-white transition-colors">
+              <span className={`w-3 h-3 bg-white transition-transform mx-1 ${withPoll ? 'translate-x-4' : 'translate-x-0'}`} />
+            </span>
+            <span className="text-xs uppercase tracking-[0.15em] text-[#8a8a8a] group-hover:text-white transition-colors">
               Derece anketi ekle
             </span>
-          </label>
+          </button>
           {withPoll && (
-            <p className="text-[11px] text-[#4a4a4a] mt-1.5 ml-13">
+            <p className="text-[11px] text-[#8a8a8a] mt-1.5 ml-13">
               Üyeler Fontainebleau skalasında rota derecesini oylarıyla belirler.
             </p>
           )}
         </div>
 
-        {error && <p className="text-[#c0392b] text-sm">{error}</p>}
+        {error && <p role="alert" className="text-[#e05a4a] text-sm">{error}</p>}
 
         <div className="flex justify-end">
           <button

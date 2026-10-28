@@ -35,16 +35,17 @@ export default async function NotificationsPage() {
     .select('*')
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
+    .limit(100)
 
   const notifs = (notifsRaw ?? []) as Notification[]
 
-  // Mark all as read
-  const unreadIds = notifs.filter((n) => !n.is_read).map((n) => n.id)
-  if (unreadIds.length > 0) {
+  // Mark all as read — filter by user instead of a huge id list in the URL
+  if (notifs.some((n) => !n.is_read)) {
     await supabase
       .from('notifications')
       .update({ is_read: true })
-      .in('id', unreadIds)
+      .eq('user_id', user!.id)
+      .eq('is_read', false)
   }
 
   return <NotifList notifs={notifs} />

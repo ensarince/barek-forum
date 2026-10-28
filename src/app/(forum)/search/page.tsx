@@ -39,7 +39,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
       .from('topics')
       .select('id, title, content, created_at, author:profiles!topics_author_id_fkey(username), sector:sectors(name)')
       .eq('status', 'approved')
-      .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+      // Quote the value so commas/brackets in the query don't break PostgREST's or() syntax
+      .or(`title.ilike."${pattern.replace(/["\\]/g, '\\$&')}",content.ilike."${pattern.replace(/["\\]/g, '\\$&')}"`)
       .order('created_at', { ascending: false })
       .limit(20),
 

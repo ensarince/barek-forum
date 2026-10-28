@@ -25,6 +25,7 @@ export default async function ProfilePage({ params }: PageProps) {
     .from('profiles')
     .select('*')
     .eq('username', username)
+    .eq('status', 'approved')
     .single()
 
   const profile = profileData as Profile | null

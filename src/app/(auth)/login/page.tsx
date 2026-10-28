@@ -58,10 +58,13 @@ function LoginForm() {
         setError(json.error ?? 'Email veya şifre hatalı.')
         return
       }
+      // Back to where the proxy sent them from — same-site paths only
+      const next = new URLSearchParams(window.location.search).get('next') ?? '/'
+      const target = next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/'
       // Hard navigation so the browser sends the server-set session cookie.
       // Not a React state mutation, so the compiler's rule doesn't apply here.
       // eslint-disable-next-line react-hooks/immutability
-      window.location.href = '/'
+      window.location.href = target
     } catch {
       setError('Bir hata oluştu. Lütfen tekrar dene.')
     } finally {
@@ -77,28 +80,35 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
+          <label htmlFor="login-email" className="sr-only">Email</label>
           <input
             {...register('email')}
+            id="login-email"
             type="email"
             placeholder="Email"
             autoComplete="email"
-            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+            autoCapitalize="none"
+            aria-invalid={!!errors.email}
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
           />
-          {errors.email && <p className="text-[#c0392b] text-xs mt-1">{errors.email.message}</p>}
+          {errors.email && <p role="alert" className="text-[#e05a4a] text-xs mt-1">{errors.email.message}</p>}
         </div>
 
         <div>
+          <label htmlFor="login-password" className="sr-only">Şifre</label>
           <input
             {...register('password')}
+            id="login-password"
             type="password"
             placeholder="Şifre"
             autoComplete="current-password"
-            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+            aria-invalid={!!errors.password}
+            className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
           />
-          {errors.password && <p className="text-[#c0392b] text-xs mt-1">{errors.password.message}</p>}
+          {errors.password && <p role="alert" className="text-[#e05a4a] text-xs mt-1">{errors.password.message}</p>}
         </div>
 
-        {error && <p className="text-[#c0392b] text-sm">{error}</p>}
+        {error && <p role="alert" className="text-[#e05a4a] text-sm">{error}</p>}
 
         <button
           type="submit"
@@ -109,13 +119,13 @@ function LoginForm() {
         </button>
       </form>
 
-      <div className="flex items-center justify-between mt-6 text-sm text-[#6b6b6b]">
-        <Link href="/forgot-password" className="hover:text-white transition-colors">
+      <div className="flex items-center justify-between mt-6 text-sm text-[#8a8a8a]">
+        <Link href="/forgot-password" className="py-2 hover:text-white transition-colors">
           Şifremi unuttum
         </Link>
         <span>
           Hesabın yok mu?{' '}
-          <Link href="/signup" className="text-[#c0392b] hover:text-white transition-colors">
+          <Link href="/signup" className="py-2 text-[#e05a4a] hover:text-white transition-colors">
             Kayıt ol
           </Link>
         </span>
@@ -129,8 +139,8 @@ export default function LoginPage() {
     <div className="min-h-screen min-h-dvh flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
-          <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
+          <h1><Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" /></h1>
+          <p className="text-[#8a8a8a] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
         <LoginForm />
       </div>

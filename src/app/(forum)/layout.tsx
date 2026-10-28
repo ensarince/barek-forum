@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ForumShell from '@/components/layout/ForumShell'
+import { getSectorTopicCounts } from '@/lib/counts'
 import type { Profile, Sector } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
@@ -105,16 +106,7 @@ export default async function ForumLayout({ children }: { children: React.ReactN
   const sectors = (sectorsData ?? []) as Sector[]
 
   // Count approved topics per sector for sidebar display
-  const { data: topicCountsData } = await supabase
-    .from('topics')
-    .select('sector_id')
-    .eq('status', 'approved')
-    .not('sector_id', 'is', null)
-
-  const sectorCounts = ((topicCountsData ?? []) as { sector_id: string }[]).reduce<Record<string, number>>(
-    (acc, t) => { acc[t.sector_id] = (acc[t.sector_id] ?? 0) + 1; return acc },
-    {}
-  )
+  const sectorCounts = await getSectorTopicCounts(supabase)
 
   const { count: unreadNotifications } = await supabase
     .from('notifications')

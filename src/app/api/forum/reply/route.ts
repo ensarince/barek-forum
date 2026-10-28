@@ -4,6 +4,7 @@ import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/data
 import { emailUserNewReply, emailUserMentioned } from '@/lib/email'
 import { isAllowedImage } from '@/lib/images'
 import { rateLimit } from '@/lib/rateLimit'
+import { parseMentions } from '@/lib/mentions'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -164,12 +165,12 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Notify @mentioned users
-  const mentionRe = /(?<!\w)@([a-zA-Z0-9_]+)/g
-  const mentionedUsernames: string[] = []
-  let m: RegExpExecArray | null
-  while (content && (m = mentionRe.exec(content)) !== null) mentionedUsernames.push(m[1])
-  const uniqueUsernames = [...new Set(mentionedUsernames)].slice(0, 5)
+  // Notify @mentioned users — skip anyone who already got a reply notification above
+  const alreadyNotified = new Set<string>([user.id])
+  if (topic.author_id !== user.id) alreadyNotified.add(topic.author_id)
+  if (parentAuthorId) alreadyNotified.add(parentAuthorId)
+
+  const uniqueUsernames = parseMentions(content ?? '')
 
   let mentionedUsers: { id: string; username: string }[] = []
   if (uniqueUsernames.length > 0) {
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
       .in('username', uniqueUsernames)
       .eq('status', 'approved')
     mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[])
-      .filter((p) => p.id !== user.id)
+      .filter((p) => !alreadyNotified.has(p.id))
     if (mentionedUsers.length > 0) {
       await service.from('notifications').insert(
         mentionedUsers.map(({ id }) => ({
@@ -209,8 +210,6 @@ export async function POST(request: NextRequest) {
   }
 
   for (const mentioned of mentionedUsers) {
-    // BUG 1 FIX: skip topic author if they already got a reply email above — no duplicates
-    if (mentioned.id === topic.author_id && topic.author_id !== user.id) continue
     emailTasks.push(emailUserMentioned(mentioned.id, mentioned.username, currentUsername, topic.title, topic_id))
   }
 

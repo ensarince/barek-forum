@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
-import { emailAdminsNewTopic, emailAllUsersAnnouncement, emailUserMentioned } from '@/lib/email'
+import { emailAdminsNewTopic, emailAllUsersAnnouncement } from '@/lib/email'
+import { notifyTopicMentions } from '@/lib/mentions'
 import { isAllowedImage } from '@/lib/images'
 import { rateLimit } from '@/lib/rateLimit'
 
@@ -90,17 +91,42 @@ export async function POST(request: NextRequest) {
   }
 
   const topic = topicData as { id: string }
+  const service = createServiceClient()
+
+  // Save images + poll right away, and undo the topic if either fails —
+  // before any notification or email goes out
+  let savedImages: ImageRow[] = []
+  const validatedImages = images ?? [] // validated above
+  if (validatedImages.length > 0) {
+    const imageInserts = validatedImages.map((img) => ({
+      uploader_id: user.id,
+      cloudinary_url: img.url,
+      cloudinary_id: img.publicId,
+      topic_id: topic.id,
+      post_id: null,
+    }))
+    const { data: imgData, error: imgError } = await supabase.from('images').insert(imageInserts).select()
+    if (imgError) {
+      await service.from('topics').delete().eq('id', topic.id)
+      return NextResponse.json({ error: 'Fotoğraflar kaydedilemedi, tekrar dene.' }, { status: 500 })
+    }
+    savedImages = (imgData ?? []) as ImageRow[]
+  }
 
   if (with_poll && !isAnnouncement) {
-    await supabase.from('polls').insert({
+    const { error: pollError } = await supabase.from('polls').insert({
       topic_id: topic.id,
       question: 'Bu rotanın derecesi nedir?',
     })
+    if (pollError) {
+      await service.from('images').delete().eq('topic_id', topic.id)
+      await service.from('topics').delete().eq('id', topic.id)
+      return NextResponse.json({ error: 'Anket oluşturulamadı, tekrar dene.' }, { status: 500 })
+    }
   }
 
   // Notify all approved users when an announcement is posted
   if (isAnnouncement) {
-    const service = createServiceClient()
     const { data: allUsers } = await service
       .from('profiles')
       .select('id')
@@ -128,7 +154,6 @@ export async function POST(request: NextRequest) {
       .eq('role', 'admin')
     const adminIds = ((adminProfiles ?? []) as { id: string }[]).filter((a) => a.id !== user.id)
     if (adminIds.length > 0) {
-      const service = createServiceClient()
       await service.from('notifications').insert(
         adminIds.map((a) => ({
           user_id: a.id,
@@ -142,46 +167,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Save images attached to the opening post (already validated above)
-  const validatedImages = images ?? []
-
-  let savedImages: ImageRow[] = []
-  if (validatedImages.length > 0) {
-    const imageInserts = validatedImages.map((img) => ({
-      uploader_id: user.id,
-      cloudinary_url: img.url,
-      cloudinary_id: img.publicId,
-      topic_id: topic.id,
-      post_id: null,
-    }))
-    const { data: imgData } = await supabase.from('images').insert(imageInserts).select()
-    savedImages = (imgData ?? []) as ImageRow[]
-  }
-
-  // BUG 2 FIX: parse @mentions in opening post content (only for immediately-approved topics
-  // — pending topics aren't visible yet, so notifying mentions before approval makes no sense)
+  // @mentions notify only once the topic is live — pending topics get theirs on admin approval
   const isImmediatelyApproved = isAnnouncement || profile.role === 'admin'
   if (isImmediatelyApproved) {
-    const mentionRe = /(?<!\w)@([a-zA-Z0-9_]+)/g
-    const mentionedUsernames: string[] = []
-    let mm: RegExpExecArray | null
-    while ((mm = mentionRe.exec(content.trim())) !== null) mentionedUsernames.push(mm[1])
-    const uniqueMentions = [...new Set(mentionedUsernames)]
-    if (uniqueMentions.length > 0) {
-      const svc = createServiceClient()
-      const { data: mentionedProfiles } = await svc.from('profiles').select('id, username').in('username', uniqueMentions).eq('status', 'approved')
-      const mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[]).filter((p) => p.id !== user.id)
-      if (mentionedUsers.length > 0) {
-        await svc.from('notifications').insert(
-          mentionedUsers.map(({ id }) => ({ user_id: id, type: 'mention_received', reference_id: topic.id, is_read: false }))
-        )
-        await Promise.all(
-          mentionedUsers.map(({ id, username: mentionedUsername }) =>
-            emailUserMentioned(id, mentionedUsername, profile.username || 'kullanıcı', title.trim(), topic.id)
-          )
-        )
-      }
-    }
+    await notifyTopicMentions({
+      topicId: topic.id,
+      title: title.trim(),
+      content: content.trim(),
+      authorId: user.id,
+      authorUsername: profile.username,
+    })
   }
 
   return NextResponse.json({ success: true, topicId: topic.id, images: savedImages })

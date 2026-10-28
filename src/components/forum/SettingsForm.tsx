@@ -86,8 +86,10 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    })
-    if (res.ok) {
+    }).catch(() => null)
+    if (!res) {
+      setProfileMsg({ ok: false, text: 'Sunucuya bağlanılamadı.' })
+    } else if (res.ok) {
       setProfileMsg({ ok: true, text: 'Kaydedildi.' })
     } else {
       const err = await res.json().catch(() => ({}))
@@ -105,8 +107,10 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
         new_password: data.new_password,
         confirm_password: data.confirm_password,
       }),
-    })
-    if (res.ok) {
+    }).catch(() => null)
+    if (!res) {
+      setPasswordMsg({ ok: false, text: 'Sunucuya bağlanılamadı.' })
+    } else if (res.ok) {
       setPasswordMsg({ ok: true, text: 'Şifre güncellendi.' })
       passwordForm.reset()
     } else {
@@ -115,9 +119,9 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
     }
   }
 
-  const inputCls = 'w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]'
-  const labelCls = 'block text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-1.5'
-  const errorCls = 'text-[#c0392b] text-xs mt-1'
+  const inputCls = 'w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]'
+  const labelCls = 'block text-xs uppercase tracking-[0.15em] text-[#8a8a8a] mb-1.5'
+  const errorCls = 'text-[#e05a4a] text-xs mt-1'
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-10">

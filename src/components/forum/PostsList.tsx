@@ -71,6 +71,7 @@ export default function PostsList({
 
   useEffect(() => {
     const supabase = createClient()
+    let cancelled = false
 
     const channel = supabase
       .channel(`topic-posts-${topicId}`)
@@ -79,11 +80,6 @@ export default function PostsList({
         { event: 'INSERT', schema: 'public', table: 'posts', filter: `topic_id=eq.${topicId}` },
         async (payload) => {
           const newId = (payload.new as { id: string }).id
-
-          setPosts((current) => {
-            if (current.some((p) => p.id === newId)) return current
-            return current
-          })
 
           const { data } = await supabase
             .from('posts')
@@ -97,14 +93,21 @@ export default function PostsList({
               return [...current, data as PostWithAuthor]
             })
 
-            // Check if this post has a poll (created by another user via Realtime)
-            const { data: pollData } = await supabase
-              .from('polls')
-              .select('*')
-              .eq('post_id', newId)
-              .maybeSingle()
+            // The post row arrives before the reply route saves its images and poll,
+            // so give it a moment, then load both
+            await new Promise((r) => setTimeout(r, 2000))
+            if (cancelled) return
+
+            const [{ data: imgData }, { data: pollData }] = await Promise.all([
+              supabase.from('images').select('*').eq('post_id', newId),
+              supabase.from('polls').select('*').eq('post_id', newId).maybeSingle(),
+            ])
+            if (cancelled) return
+            if (imgData && imgData.length > 0) {
+              setImages((current) => current[newId] ? current : { ...current, [newId]: imgData as ImageRow[] })
+            }
             if (pollData) {
-              setPostPolls((current) => ({
+              setPostPolls((current) => current[newId] ? current : ({
                 ...current,
                 [newId]: { poll: pollData as Poll, votes: {}, userVote: null },
               }))
@@ -115,6 +118,7 @@ export default function PostsList({
       .subscribe()
 
     return () => {
+      cancelled = true
       supabase.removeChannel(channel)
     }
   }, [topicId])
@@ -130,7 +134,7 @@ export default function PostsList({
       {topLevel.length > 0 && (
         <>
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">{posts.length} Yanıt</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">{posts.filter((p) => !p.is_deleted).length} Yanıt</span>
             <div className="flex-1 border-t border-[#2a2a2a]" />
           </div>
 
@@ -189,6 +193,8 @@ export default function PostsList({
                               <ReplyForm
                                 topicId={topicId}
                                 parentPostId={post.id}
+                                // Threads stay 2 levels deep, so tag who is being answered
+                                initialContent={reply.author?.username && reply.author_id !== currentUserId ? `@${reply.author.username} ` : ''}
                                 authorId={currentUserId}
                                 authorUsername={currentUsername}
                                 authorAvatarUrl={currentAvatarUrl}
@@ -252,20 +258,23 @@ function PostCard({
   const [editLoading, setEditLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const isOwn = post.author_id === currentUserId
 
   if (post.is_deleted) {
     return (
       <div className={`bg-[#161616] border border-[#2a2a2a] ${nested ? 'p-3' : 'p-3 sm:p-5'}`}>
-        <p className="text-xs text-[#4a4a4a] italic ml-7 sm:ml-8">[silindi]</p>
+        <p className="text-xs text-[#8a8a8a] italic ml-7 sm:ml-8">[silindi]</p>
       </div>
     )
   }
 
   async function saveEdit() {
-    if (!editContent.trim()) return
+    // Photo/GIF-only replies may have empty text
+    if (!editContent.trim() && postImages.length === 0) return
     setEditLoading(true)
+    setActionError(null)
     try {
       const res = await fetch('/api/forum/reply', {
         method: 'PATCH',
@@ -275,7 +284,12 @@ function PostCard({
       if (res.ok) {
         onEdit(post.id, editContent.trim())
         setEditing(false)
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setActionError(data.error ?? 'Kaydedilemedi.')
       }
+    } catch {
+      setActionError('Sunucuya bağlanılamadı.')
     } finally {
       setEditLoading(false)
     }
@@ -283,13 +297,21 @@ function PostCard({
 
   async function deletePost() {
     setDeleteLoading(true)
+    setActionError(null)
     try {
       const res = await fetch('/api/forum/reply', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: post.id }),
       })
-      if (res.ok) onDelete(post.id)
+      if (res.ok) {
+        onDelete(post.id)
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setActionError(data.error ?? 'Silinemedi.')
+      }
+    } catch {
+      setActionError('Sunucuya bağlanılamadı.')
     } finally {
       setDeleteLoading(false)
       setDeleteConfirm(false)
@@ -307,34 +329,35 @@ function PostCard({
           </div>
         )}
         {post.author?.username ? (
-          <Link href={`/profile/${post.author.username}`} className="text-sm font-medium text-[#e8e8e8] hover:text-white hover:underline">{post.author.username}</Link>
+          <Link href={`/profile/${post.author.username}`} className="text-sm font-medium text-[#e8e8e8] hover:text-white hover:underline truncate min-w-0">{post.author.username}</Link>
         ) : (
           <span className="text-sm font-medium text-[#e8e8e8]">bilinmiyor</span>
         )}
-        <span className="text-[11px] text-[#6b6b6b]">· {formatDistanceToNow(post.created_at)}</span>
+        <span className="text-[11px] text-[#8a8a8a] shrink-0">· {formatDistanceToNow(post.created_at)}</span>
         {isOwn && !editing && (
-          <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => { setEditing(true); setEditContent(post.content); setTimeout(() => editRef.current?.focus(), 50) }} className="text-[#4a4a4a] hover:text-[#a0a0a0] transition-colors" title="Düzenle">
-              <Pencil size={12} />
+          <div className="ml-auto flex items-center gap-1 -my-2 shrink-0">
+            <button onClick={() => { setEditing(true); setEditContent(post.content); setTimeout(() => editRef.current?.focus(), 50) }} className="p-2.5 text-[#8a8a8a] hover:text-white transition-colors" title="Düzenle" aria-label="Yanıtı düzenle">
+              <Pencil size={14} />
             </button>
             {deleteConfirm ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-[#6b6b6b]">Sil?</span>
-                <button onClick={deletePost} disabled={deleteLoading} className="text-[10px] text-red-400 hover:text-red-300 transition-colors disabled:opacity-40">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[#8a8a8a]">Sil?</span>
+                <button onClick={deletePost} disabled={deleteLoading} className="px-2.5 py-2 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-40">
                   {deleteLoading ? '...' : 'Evet'}
                 </button>
-                <button onClick={() => setDeleteConfirm(false)} className="text-[10px] text-[#6b6b6b] hover:text-white transition-colors">
-                  <X size={10} />
+                <button onClick={() => setDeleteConfirm(false)} className="p-2.5 text-[#8a8a8a] hover:text-white transition-colors" aria-label="Silmeyi iptal et">
+                  <X size={14} />
                 </button>
               </div>
             ) : (
-              <button onClick={() => setDeleteConfirm(true)} className="text-[#4a4a4a] hover:text-red-400 transition-colors" title="Sil">
-                <Trash2 size={12} />
+              <button onClick={() => setDeleteConfirm(true)} className="p-2.5 text-[#8a8a8a] hover:text-red-400 transition-colors" title="Sil" aria-label="Yanıtı sil">
+                <Trash2 size={14} />
               </button>
             )}
           </div>
         )}
       </div>
+      {actionError && <p role="alert" className="text-[#e05a4a] text-xs mt-1 ml-7 sm:ml-8">{actionError}</p>}
 
       {editing ? (
         <div className="mt-2 ml-7 sm:ml-8">
@@ -343,7 +366,8 @@ function PostCard({
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             rows={3}
-            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a] resize-none"
+            aria-label="Yanıtı düzenle"
+            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] resize-none"
           />
           <div className="flex items-center gap-2 mt-1.5">
             <button onClick={saveEdit} disabled={editLoading} className="text-xs bg-[#8b1a1a] hover:bg-[#a82020] text-white px-3 py-1.5 transition-colors disabled:opacity-50">
@@ -355,7 +379,7 @@ function PostCard({
           </div>
         </div>
       ) : (
-        <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap ml-7 sm:ml-8">
+        <div className="mt-2 text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] ml-7 sm:ml-8">
           {renderContent(post.content)}
         </div>
       )}
@@ -384,10 +408,11 @@ function PostCard({
         </div>
       )}
 
-      <div className="ml-7 sm:ml-8 mt-2">
+      <div className="ml-7 sm:ml-8 mt-1">
         <button
           onClick={onReply}
-          className={`text-xs transition-colors ${isReplying ? 'text-[#c0392b]' : 'text-[#6b6b6b] hover:text-white'}`}
+          aria-expanded={isReplying}
+          className={`-ml-2 px-2 py-2 text-xs transition-colors ${isReplying ? 'text-[#e05a4a]' : 'text-[#8a8a8a] hover:text-white'}`}
         >
           {isReplying ? '↩ İptal' : '↩ Yanıtla'}
         </button>
