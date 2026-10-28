@@ -65,7 +65,7 @@ export default function SignupPage() {
       <div className="min-h-screen min-h-dvh flex items-center justify-center bg-[#0d0d0d] px-4">
         <div className="text-center max-w-sm">
           <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-3">Kayıt Alındı</h2>
-          <p className="text-[#6b6b6b] text-sm leading-relaxed">
+          <p className="text-[#8a8a8a] text-sm leading-relaxed">
             Hesabın admin onayı bekliyor. Onaylandığında bildirim alacaksın.
           </p>
         </div>
@@ -77,41 +77,57 @@ export default function SignupPage() {
     <div className="min-h-screen min-h-dvh flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
-          <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
+          <h1><Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" /></h1>
+          <p className="text-[#8a8a8a] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
+            <label htmlFor="signup-username" className="sr-only">Kullanıcı adı</label>
             <input
               {...register('username')}
+              id="signup-username"
               placeholder="Kullanıcı adı"
-              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={!!errors.username}
+              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
             />
-            {errors.username && <p className="text-[#c0392b] text-xs mt-1">{errors.username.message}</p>}
+            {errors.username && <p role="alert" className="text-[#e05a4a] text-xs mt-1">{errors.username.message}</p>}
           </div>
 
           <div>
+            <label htmlFor="signup-email" className="sr-only">Email</label>
             <input
               {...register('email')}
+              id="signup-email"
               type="email"
               placeholder="Email"
-              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+              autoComplete="email"
+              autoCapitalize="none"
+              aria-invalid={!!errors.email}
+              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
             />
-            {errors.email && <p className="text-[#c0392b] text-xs mt-1">{errors.email.message}</p>}
+            {errors.email && <p role="alert" className="text-[#e05a4a] text-xs mt-1">{errors.email.message}</p>}
           </div>
 
           <div>
+            <label htmlFor="signup-password" className="sr-only">Şifre</label>
             <input
               {...register('password')}
+              id="signup-password"
               type="password"
               placeholder="Şifre (en az 8 karakter)"
-              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
             />
-            {errors.password && <p className="text-[#c0392b] text-xs mt-1">{errors.password.message}</p>}
+            {errors.password && <p role="alert" className="text-[#e05a4a] text-xs mt-1">{errors.password.message}</p>}
           </div>
 
-          {error && <p className="text-[#c0392b] text-sm">{error}</p>}
+          {error && <p role="alert" className="text-[#e05a4a] text-sm">{error}</p>}
 
           <button
             type="submit"
@@ -122,9 +138,9 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="text-center text-[#6b6b6b] text-sm mt-6">
+        <p className="text-center text-[#8a8a8a] text-sm mt-6">
           Zaten hesabın var mı?{' '}
-          <Link href="/login" className="text-[#c0392b] hover:text-white transition-colors">
+          <Link href="/login" className="text-[#e05a4a] hover:text-white transition-colors">
             Giriş yap
           </Link>
         </p>

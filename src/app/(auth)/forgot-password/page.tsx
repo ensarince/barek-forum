@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
           <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
-          <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
+          <p className="text-[#8a8a8a] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
 
         {sent ? (
@@ -49,13 +49,13 @@ export default function ForgotPasswordPage() {
               Eğer bu email sistemde kayıtlıysa sıfırlama bağlantısı gönderildi.<br />
               Gelen kutunu ve spam klasörünü kontrol et.
             </p>
-            <Link href="/login" className="block text-[#6b6b6b] text-sm hover:text-white transition-colors">
+            <Link href="/login" className="block text-[#8a8a8a] text-sm hover:text-white transition-colors">
               ← Giriş sayfasına dön
             </Link>
           </div>
         ) : (
           <>
-            <p className="text-[#6b6b6b] text-sm mb-6 text-center">
+            <p className="text-[#8a8a8a] text-sm mb-6 text-center">
               Email adresini gir, sıfırlama bağlantısı gönderelim.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,12 +65,15 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
+                  aria-label="Email"
+                  autoComplete="email"
+                  autoCapitalize="none"
                   required
-                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
                 />
               </div>
 
-              {error && <p className="text-[#c0392b] text-sm">{error}</p>}
+              {error && <p role="alert" className="text-[#e05a4a] text-sm">{error}</p>}
 
               <button
                 type="submit"
@@ -81,7 +84,7 @@ export default function ForgotPasswordPage() {
               </button>
             </form>
 
-            <p className="text-center text-[#6b6b6b] text-sm mt-6">
+            <p className="text-center text-[#8a8a8a] text-sm mt-6">
               <Link href="/login" className="hover:text-white transition-colors">
                 ← Giriş sayfasına dön
               </Link>

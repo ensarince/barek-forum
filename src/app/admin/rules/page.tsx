@@ -58,7 +58,7 @@ export default function AdminRulesPage() {
   return (
     <div className="p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b]">Kurallar</h1>
+        <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a]">Kurallar</h1>
         <div className="flex items-center gap-3">
           {saved && <span className="text-xs text-emerald-400 uppercase tracking-widest">Kaydedildi</span>}
           {error && <span className="text-xs text-red-400">{error}</span>}
@@ -76,10 +76,10 @@ export default function AdminRulesPage() {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={25}
-        className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#8b1a1a] resize-y leading-relaxed"
+        className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#e05a4a] resize-y leading-relaxed"
         placeholder="Kuralları buraya girin (Markdown desteklenir)"
       />
-      <p className="text-xs text-[#6b6b6b] mt-2">Markdown desteklenir: ## başlık, - liste, **kalın**</p>
+      <p className="text-xs text-[#8a8a8a] mt-2">Markdown desteklenir: ## başlık, - liste, **kalın**</p>
     </div>
   )
 }

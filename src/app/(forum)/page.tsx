@@ -52,7 +52,7 @@ export default async function FeedPage() {
     <div className="max-w-3xl mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1">
-          <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Son Tartışmalar</h2>
+          <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">Son Tartışmalar</h1>
           <RefreshButton />
         </div>
         <Link
@@ -81,18 +81,18 @@ export default async function FeedPage() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  {topic.is_pinned && <Pin size={11} className="text-[#8b1a1a] shrink-0" />}
+                  {topic.is_pinned && <Pin size={11} className="text-[#e05a4a] shrink-0" />}
                   {topic.type === 'announcement' && (
                     <span className="text-[9px] uppercase tracking-widest bg-[#8b1a1a] text-white px-1.5 py-0.5">
                       Duyuru
                     </span>
                   )}
                   {topic.sector ? (
-                    <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">
+                    <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-[#2a2a2a] px-1.5 py-0.5">
                       {topic.sector.name}
                     </span>
                   ) : topic.tag ? (
-                    <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
+                    <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
                       {topic.tag}
                     </span>
                   ) : null}
@@ -102,7 +102,7 @@ export default async function FeedPage() {
                   {topic.title}
                 </p>
 
-                <div className="flex items-center gap-x-3 gap-y-0 flex-wrap mt-1.5 text-[11px] text-[#6b6b6b]">
+                <div className="flex items-center gap-x-3 gap-y-0 flex-wrap mt-1.5 text-[11px] text-[#8a8a8a]">
                   <span className="truncate max-w-[10rem]">{topic.author?.username ?? 'bilinmiyor'}</span>
                   <span>·</span>
                   <span className="flex items-center gap-1 shrink-0">
@@ -118,7 +118,7 @@ export default async function FeedPage() {
         })}
 
         {topics.length === 0 && (
-          <p className="text-[#6b6b6b] text-sm py-8 text-center">Henüz konu yok.</p>
+          <p className="text-[#8a8a8a] text-sm py-8 text-center">Henüz konu yok.</p>
         )}
       </div>
     </div>
@@ -137,7 +137,7 @@ function PreviewFeed() {
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Son Tartışmalar</h2>
+        <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">Son Tartışmalar</h1>
         <Link href="/topics/new" className="text-xs uppercase tracking-widest bg-[#8b1a1a] hover:bg-[#a82020] text-white px-4 py-2 transition-colors">
           + Yeni Konu
         </Link>
@@ -151,18 +151,18 @@ function PreviewFeed() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                {topic.pinned && <Pin size={11} className="text-[#8b1a1a] shrink-0" />}
+                {topic.pinned && <Pin size={11} className="text-[#e05a4a] shrink-0" />}
                 {topic.type === 'announcement' && (
                   <span className="text-[9px] uppercase tracking-widest bg-[#8b1a1a] text-white px-1.5 py-0.5">Duyuru</span>
                 )}
                 {topic.sector && (
-                  <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">{topic.sector}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-[#2a2a2a] px-1.5 py-0.5">{topic.sector}</span>
                 )}
               </div>
               <p className={`text-sm leading-snug truncate ${topic.unread ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>
                 {topic.title}
               </p>
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#6b6b6b]">
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#8a8a8a]">
                 <span>{topic.author}</span>
                 <span>·</span>
                 <span className="flex items-center gap-1"><MessageSquare size={11} />{topic.replies}</span>

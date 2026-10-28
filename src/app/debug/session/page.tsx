@@ -24,8 +24,8 @@ function maskEmail(email: string | null | undefined) {
 function Row({ label, value, bad }: { label: string; value: string; bad?: boolean }) {
   return (
     <div className="flex justify-between gap-3 py-1.5 border-b border-[#2a2a2a]">
-      <span className="text-[#6b6b6b] shrink-0">{label}</span>
-      <span className={`text-right break-all ${bad ? 'text-[#c0392b]' : 'text-[#e8e8e8]'}`}>{value}</span>
+      <span className="text-[#8a8a8a] shrink-0">{label}</span>
+      <span className={`text-right break-all ${bad ? 'text-[#e05a4a]' : 'text-[#e8e8e8]'}`}>{value}</span>
     </div>
   )
 }
@@ -86,15 +86,15 @@ export default async function SessionDebugPage() {
     <div className="min-h-[100dvh] bg-[#0d0d0d] px-4 py-6">
       <div className="max-w-md mx-auto font-mono text-[11px]">
         <h1 className="text-white text-sm font-bold uppercase tracking-widest mb-1">Oturum Teşhis</h1>
-        <p className="text-[#6b6b6b] mb-5">
+        <p className="text-[#8a8a8a] mb-5">
           Bu ekranın tamamının ekran görüntüsünü al ve gönder. Şifre veya token içermez.
         </p>
 
-        <p className="text-[#8b1a1a] uppercase tracking-widest mt-5 mb-1">Tarayıcı</p>
+        <p className="text-[#e05a4a] uppercase tracking-widest mt-5 mb-1">Tarayıcı</p>
         <Row label="iOS" value={isIOS ? 'evet' : 'hayır'} />
         <Row label="Safari" value={isSafari ? 'evet' : 'hayır'} />
 
-        <p className="text-[#8b1a1a] uppercase tracking-widest mt-5 mb-1">Oturum Cookie&apos;si</p>
+        <p className="text-[#e05a4a] uppercase tracking-widest mt-5 mb-1">Oturum Cookie&apos;si</p>
         <Row label="parça sayısı" value={String(authCookies.length)} bad={authCookies.length === 0} />
         <Row label="toplam boyut" value={`${authBytes} bayt`} bad={authBytes > 4096} />
         <Row label="diğer cookie" value={String(allCookies.length - authCookies.length)} />
@@ -102,17 +102,17 @@ export default async function SessionDebugPage() {
           <Row key={c.name} label={c.name} value={`${c.value.length} bayt`} />
         ))}
 
-        <p className="text-[#8b1a1a] uppercase tracking-widest mt-5 mb-1">Oturum Durumu</p>
+        <p className="text-[#e05a4a] uppercase tracking-widest mt-5 mb-1">Oturum Durumu</p>
         <Row label="süre" value={expiryLabel} bad={secondsLeft !== null && secondsLeft <= 0} />
         {sessionError && <Row label="getSession hata" value={sessionError} bad />}
 
-        <p className="text-[#8b1a1a] uppercase tracking-widest mt-5 mb-1">Sunucu Doğrulama</p>
+        <p className="text-[#e05a4a] uppercase tracking-widest mt-5 mb-1">Sunucu Doğrulama</p>
         <Row label="getUser()" value={userState} bad={userState !== 'OK'} />
         <Row label="süre" value={`${userMs} ms`} bad={userMs > 2000} />
         <Row label="email" value={maskEmail(userEmail)} />
         {userError && <Row label="hata" value={userError} bad />}
 
-        <p className="text-[#6b6b6b] mt-6">
+        <p className="text-[#8a8a8a] mt-6">
           {new Date().toISOString()}
         </p>
 

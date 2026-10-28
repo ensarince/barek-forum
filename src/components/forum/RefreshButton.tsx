@@ -18,7 +18,7 @@ export default function RefreshButton() {
     <button
       onClick={handleRefresh}
       title="Yenile"
-      className="p-2 text-[#6b6b6b] hover:text-white transition-colors"
+      className="p-2 text-[#8a8a8a] hover:text-white transition-colors"
     >
       <RefreshCw size={14} className={spinning ? 'animate-spin' : ''} />
     </button>

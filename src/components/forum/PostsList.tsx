@@ -325,7 +325,7 @@ function PostCard({
           <img src={post.author.avatar_url} alt="" className="w-6 h-6 object-cover border border-[#2a2a2a] shrink-0" />
         ) : (
           <div className="w-6 h-6 bg-[#2a2a2a] flex items-center justify-center shrink-0">
-            <User size={12} className="text-[#6b6b6b]" />
+            <User size={12} className="text-[#8a8a8a]" />
           </div>
         )}
         {post.author?.username ? (
@@ -373,7 +373,7 @@ function PostCard({
             <button onClick={saveEdit} disabled={editLoading} className="text-xs bg-[#8b1a1a] hover:bg-[#a82020] text-white px-3 py-1.5 transition-colors disabled:opacity-50">
               {editLoading ? '...' : 'Kaydet'}
             </button>
-            <button onClick={() => setEditing(false)} className="text-xs text-[#6b6b6b] hover:text-white transition-colors">
+            <button onClick={() => setEditing(false)} className="text-xs text-[#8a8a8a] hover:text-white transition-colors">
               İptal
             </button>
           </div>

@@ -35,7 +35,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Duyurular</h2>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Duyurular</h1>
 
       <div className="divide-y divide-[#2a2a2a]">
         {topics.map((topic) => (
@@ -44,12 +44,12 @@ export default async function AnnouncementsPage() {
             href={`/topics/${topic.id}`}
             className="flex items-start gap-4 py-4 hover:bg-[#161616] -mx-4 px-4 transition-colors"
           >
-            <div className="mt-2 shrink-0 text-[#8b1a1a]">
+            <div className="mt-2 shrink-0 text-[#e05a4a]">
               {topic.is_pinned ? <Pin size={13} /> : <span className="w-3 h-3 block" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white leading-snug truncate">{topic.title}</p>
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#6b6b6b]">
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#8a8a8a]">
                 <span>{topic.author?.username ?? 'admin'}</span>
                 <span>·</span>
                 <span className="flex items-center gap-1"><MessageSquare size={11} />{countMap[topic.id] ?? 0}</span>
@@ -60,7 +60,7 @@ export default async function AnnouncementsPage() {
           </Link>
         ))}
         {topics.length === 0 && (
-          <p className="text-[#6b6b6b] text-sm py-8 text-center">Henüz duyuru yok.</p>
+          <p className="text-[#8a8a8a] text-sm py-8 text-center">Henüz duyuru yok.</p>
         )}
       </div>
     </div>
@@ -75,16 +75,16 @@ function PreviewAnnouncements() {
   ]
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Duyurular</h2>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Duyurular</h1>
       <div className="divide-y divide-[#2a2a2a]">
         {items.map((t) => (
           <div key={t.id} className="flex items-start gap-4 py-4 hover:bg-[#161616] -mx-4 px-4 transition-colors cursor-pointer">
-            <div className="mt-2 shrink-0 text-[#8b1a1a]">
+            <div className="mt-2 shrink-0 text-[#e05a4a]">
               {t.pinned ? <Pin size={13} /> : <span className="w-3 h-3 block" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white leading-snug truncate">{t.title}</p>
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#6b6b6b]">
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#8a8a8a]">
                 <span>{t.author}</span><span>·</span>
                 <span className="flex items-center gap-1"><MessageSquare size={11} />{t.replies}</span>
                 <span>·</span><span>{t.ago}</span>

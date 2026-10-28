@@ -97,3 +97,19 @@
 
 /* Selection */
 ::selection { background: #8b1a1a; color: #e8e8e8; }
+
+/* Visible keyboard focus everywhere (mouse/touch clicks don't trigger it) */
+:focus-visible {
+  outline: 2px solid #e05a4a;
+  outline-offset: 2px;
+}
+
+/* Respect "reduce motion" on iOS/macOS */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

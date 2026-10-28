@@ -96,7 +96,7 @@ export default function AdminSectorsPage() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b] mb-6">Sektörler</h1>
+      <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a] mb-6">Sektörler</h1>
 
       <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a] mb-8">
         {sectors.map((s) => (
@@ -106,19 +106,19 @@ export default function AdminSectorsPage() {
                 <input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a]"
+                  className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a]"
                 />
                 <input
                   value={editDesc}
                   onChange={(e) => setEditDesc(e.target.value)}
                   placeholder="Açıklama (isteğe bağlı)"
-                  className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+                  className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
                 />
                 <div className="flex gap-2">
                   <button onClick={saveEdit} disabled={loading} className="px-3 py-1.5 bg-[#8b1a1a] hover:bg-[#a82020] text-white text-xs uppercase tracking-widest transition-colors disabled:opacity-40">
                     Kaydet
                   </button>
-                  <button onClick={() => setEditId(null)} className="px-3 py-1.5 bg-[#1e1e1e] text-[#6b6b6b] hover:text-white text-xs uppercase tracking-widest transition-colors">
+                  <button onClick={() => setEditId(null)} className="px-3 py-1.5 bg-[#1e1e1e] text-[#8a8a8a] hover:text-white text-xs uppercase tracking-widest transition-colors">
                     İptal
                   </button>
                 </div>
@@ -127,10 +127,10 @@ export default function AdminSectorsPage() {
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <p className="text-sm text-white">{s.name}</p>
-                  {s.description && <p className="text-xs text-[#6b6b6b] mt-0.5">{s.description}</p>}
+                  {s.description && <p className="text-xs text-[#8a8a8a] mt-0.5">{s.description}</p>}
                 </div>
-                <span className="text-xs text-[#6b6b6b]">#{s.order_index + 1}</span>
-                <button onClick={() => startEdit(s)} className="text-xs text-[#6b6b6b] hover:text-white transition-colors">
+                <span className="text-xs text-[#8a8a8a]">#{s.order_index + 1}</span>
+                <button onClick={() => startEdit(s)} className="text-xs text-[#8a8a8a] hover:text-white transition-colors">
                   Düzenle
                 </button>
                 <button onClick={() => deleteSector(s.id)} className="text-xs text-red-500 hover:text-red-400 transition-colors">
@@ -143,19 +143,19 @@ export default function AdminSectorsPage() {
       </div>
 
       <div className="border border-[#2a2a2a] p-4">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">Yeni Sektör Ekle</h2>
+        <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">Yeni Sektör Ekle</h2>
         <div className="space-y-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Sektör adı"
-            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
           />
           <input
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Açıklama (isteğe bağlı)"
-            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] text-[#e8e8e8] px-3 py-2 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
           />
           <button
             onClick={addSector}

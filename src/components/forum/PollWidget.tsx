@@ -51,8 +51,8 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
   return (
     <div className="bg-[#161616] border border-[#2a2a2a] p-3 sm:p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">{question}</p>
-        <span className="text-[11px] text-[#4a4a4a]">{total} oy</span>
+        <p className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">{question}</p>
+        <span className="text-[11px] text-[#8a8a8a]">{total} oy</span>
       </div>
 
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mb-5">
@@ -67,7 +67,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
               className={`py-1.5 text-xs font-bold tracking-wider border transition-colors disabled:cursor-wait ${
                 isVoted
                   ? 'bg-[#8b1a1a] border-[#8b1a1a] text-white'
-                  : 'bg-transparent border-[#2a2a2a] text-[#6b6b6b] hover:border-[#8b1a1a] hover:text-white'
+                  : 'bg-transparent border-[#2a2a2a] text-[#8a8a8a] hover:border-[#8b1a1a] hover:text-white'
               } ${isLoading ? 'opacity-50' : ''}`}
             >
               {grade}
@@ -85,7 +85,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
             const isVoted = userVote === grade
             return (
               <div key={grade} className="flex items-center gap-2">
-                <span className={`text-[11px] w-8 shrink-0 text-right font-bold ${isVoted ? 'text-[#c0392b]' : 'text-[#6b6b6b]'}`}>
+                <span className={`text-[11px] w-8 shrink-0 text-right font-bold ${isVoted ? 'text-[#e05a4a]' : 'text-[#8a8a8a]'}`}>
                   {grade}
                 </span>
                 <div className="flex-1 h-4 bg-[#0d0d0d] border border-[#2a2a2a] overflow-hidden">
@@ -94,7 +94,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
                     style={{ width: `${barWidth}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-[#4a4a4a] w-12 shrink-0">
+                <span className="text-[11px] text-[#8a8a8a] w-12 shrink-0">
                   {count} ({pct}%)
                 </span>
               </div>
@@ -103,10 +103,10 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
         </div>
       )}
 
-      {error && <p className="text-[#c0392b] text-xs mt-2">{error}</p>}
+      {error && <p className="text-[#e05a4a] text-xs mt-2">{error}</p>}
       {userVote && (
-        <p className="text-[11px] text-[#6b6b6b] mt-3">
-          Oyun: <span className="text-[#c0392b] font-bold">{userVote}</span> — değiştirmek için başka dereceye tıkla
+        <p className="text-[11px] text-[#8a8a8a] mt-3">
+          Oyun: <span className="text-[#e05a4a] font-bold">{userVote}</span> — değiştirmek için başka dereceye tıkla
         </p>
       )}
     </div>

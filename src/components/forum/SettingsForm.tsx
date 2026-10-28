@@ -125,11 +125,11 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-10">
-      <h1 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">Ayarlar</h1>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">Ayarlar</h1>
 
       {/* Avatar upload */}
       <section className="bg-[#161616] border border-[#2a2a2a] p-6">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-4">Profil Fotoğrafı</h2>
+        <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-4">Profil Fotoğrafı</h2>
         <div className="flex items-center gap-4">
           {avatarUrl ? (
             <img src={avatarUrl} alt={profile.username} className="w-16 h-16 object-cover border border-[#2a2a2a]" />
@@ -149,7 +149,7 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
               {avatarUploading ? 'Yükleniyor...' : 'Fotoğraf Değiştir'}
             </button>
             {avatarMsg && (
-              <p className={`text-xs mt-1 ${avatarMsg.ok ? 'text-green-500' : 'text-[#c0392b]'}`}>{avatarMsg.text}</p>
+              <p className={`text-xs mt-1 ${avatarMsg.ok ? 'text-green-500' : 'text-[#e05a4a]'}`}>{avatarMsg.text}</p>
             )}
           </div>
         </div>
@@ -157,11 +157,12 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
 
       {/* Profile info + links */}
       <section className="bg-[#161616] border border-[#2a2a2a] p-6">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Profil Bilgileri</h2>
+        <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Profil Bilgileri</h2>
         <form onSubmit={profileForm.handleSubmit(saveProfile)} className="space-y-4">
           <div>
-            <label className={labelCls}>Kullanıcı Adı</label>
+            <label htmlFor="set-username" className={labelCls}>Kullanıcı Adı</label>
             <input
+              id="set-username"
               value={profile.username}
               readOnly
               className={`${inputCls} opacity-40 cursor-not-allowed`}
@@ -169,8 +170,10 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
           </div>
 
           <div>
-            <label className={labelCls}>Ad Soyad (opsiyonel)</label>
+            <label htmlFor="set-full-name" className={labelCls}>Ad Soyad (opsiyonel)</label>
             <input
+              id="set-full-name"
+              autoComplete="name"
               {...profileForm.register('full_name')}
               placeholder="Adın ve soyadın"
               className={inputCls}
@@ -181,7 +184,7 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
           </div>
 
           <div className="pt-2 border-t border-[#2a2a2a]">
-            <h3 className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b] mb-4">Dış Bağlantılar</h3>
+            <h3 className="text-xs uppercase tracking-[0.15em] text-[#8a8a8a] mb-4">Dış Bağlantılar</h3>
             <div className="space-y-3">
               {[
                 { name: 'eight_a_url' as const, label: '8a.nu', placeholder: 'https://www.8a.nu/user/kullaniciadi' },
@@ -190,8 +193,11 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
                 { name: 'youtube_url' as const, label: 'YouTube', placeholder: 'https://youtube.com/@kullaniciadi' },
               ].map(({ name, label, placeholder }) => (
                 <div key={name}>
-                  <label className={labelCls}>{label}</label>
+                  <label htmlFor={`set-${name}`} className={labelCls}>{label}</label>
                   <input
+                    id={`set-${name}`}
+                    type="url"
+                    autoCapitalize="none"
                     {...profileForm.register(name)}
                     placeholder={placeholder}
                     className={inputCls}
@@ -205,7 +211,7 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
           </div>
 
           {profileMsg && (
-            <p className={profileMsg.ok ? 'text-green-500 text-sm' : errorCls}>{profileMsg.text}</p>
+            <p role={profileMsg.ok ? 'status' : 'alert'} className={profileMsg.ok ? 'text-green-500 text-sm' : errorCls}>{profileMsg.text}</p>
           )}
 
           <button
@@ -220,11 +226,13 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
 
       {/* Password */}
       <section className="bg-[#161616] border border-[#2a2a2a] p-6">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Şifre Değiştir</h2>
+        <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Şifre Değiştir</h2>
         <form onSubmit={passwordForm.handleSubmit(savePassword)} className="space-y-4">
           <div>
-            <label className={labelCls}>Mevcut Şifre</label>
+            <label htmlFor="set-current-password" className={labelCls}>Mevcut Şifre</label>
             <input
+              id="set-current-password"
+              autoComplete="current-password"
               {...passwordForm.register('current_password')}
               type="password"
               placeholder="Mevcut şifreni gir"
@@ -235,8 +243,10 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
             )}
           </div>
           <div>
-            <label className={labelCls}>Yeni Şifre</label>
+            <label htmlFor="set-new-password" className={labelCls}>Yeni Şifre</label>
             <input
+              id="set-new-password"
+              autoComplete="new-password"
               {...passwordForm.register('new_password')}
               type="password"
               placeholder="En az 8 karakter"
@@ -248,8 +258,10 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
           </div>
 
           <div>
-            <label className={labelCls}>Şifre Tekrar</label>
+            <label htmlFor="set-confirm-password" className={labelCls}>Şifre Tekrar</label>
             <input
+              id="set-confirm-password"
+              autoComplete="new-password"
               {...passwordForm.register('confirm_password')}
               type="password"
               placeholder="Şifreyi tekrar gir"
@@ -261,7 +273,7 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
           </div>
 
           {passwordMsg && (
-            <p className={passwordMsg.ok ? 'text-green-500 text-sm' : errorCls}>{passwordMsg.text}</p>
+            <p role={passwordMsg.ok ? 'status' : 'alert'} className={passwordMsg.ok ? 'text-green-500 text-sm' : errorCls}>{passwordMsg.text}</p>
           )}
 
           <button

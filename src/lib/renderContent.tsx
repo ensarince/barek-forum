@@ -25,7 +25,7 @@ export function renderContent(content: string): React.ReactNode {
   const inlineNodes = parts.map((part, i) => {
     if (part.startsWith('@') && /^@[a-zA-Z0-9_]+$/.test(part)) {
       return (
-        <Link key={i} href={`/profile/${part.slice(1)}`} className="text-[#c0392b] font-medium hover:underline">
+        <Link key={i} href={`/profile/${part.slice(1)}`} className="text-[#e05a4a] font-medium hover:underline">
           {part}
         </Link>
       )
@@ -41,7 +41,7 @@ export function renderContent(content: string): React.ReactNode {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#c0392b] underline break-all hover:text-[#e05050] transition-colors"
+          className="text-[#e05a4a] underline break-all hover:text-[#e05050] transition-colors"
         >
           {url}
         </a>
@@ -72,7 +72,7 @@ export function renderContent(content: string): React.ReactNode {
           </div>
         </div>
       </div>
-      <div className="px-3 py-1.5 bg-[#1a1a1a] text-xs text-[#6b6b6b]">youtube.com</div>
+      <div className="px-3 py-1.5 bg-[#1a1a1a] text-xs text-[#8a8a8a]">youtube.com</div>
     </a>
   ))
 

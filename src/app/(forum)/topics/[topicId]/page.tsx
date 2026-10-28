@@ -252,7 +252,7 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
   const backHref = topic.sector_id ? `/sectors/${topic.sector_id}` : '/'
   return (
     <div className="mb-4 sm:mb-6">
-      <Link href={backHref} className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-3">
+      <Link href={backHref} className="inline-flex items-center gap-1.5 text-[11px] text-[#8a8a8a] hover:text-white transition-colors mb-3">
         <ArrowLeft size={12} />
         {topic.sector ? topic.sector.name : 'Ana Sayfa'}
       </Link>
@@ -261,17 +261,17 @@ function TopicHeader({ topic }: { topic: TopicWithMeta }) {
           <span className="text-[9px] uppercase tracking-widest bg-[#8b1a1a] text-white px-1.5 py-0.5">Duyuru</span>
         )}
         {topic.sector ? (
-          <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-[#2a2a2a] px-1.5 py-0.5">
             {topic.sector.name}
           </span>
         ) : topic.tag ? (
-          <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-dashed border-[#2a2a2a] px-1.5 py-0.5">
             {topic.tag}
           </span>
         ) : null}
       </div>
       <h1 className="text-xl font-bold text-white leading-snug break-words">{topic.title}</h1>
-      <p className="text-[11px] text-[#6b6b6b] mt-1">
+      <p className="text-[11px] text-[#8a8a8a] mt-1">
         {topic.author?.username ? (
           <Link href={`/profile/${topic.author.username}`} className="hover:text-white hover:underline transition-colors">{topic.author.username}</Link>
         ) : 'bilinmiyor'} · {formatDistanceToNow(topic.created_at)}
@@ -292,19 +292,19 @@ function PreviewTopic({ topicId }: { topicId: string }) {
     <div className="max-w-3xl mx-auto py-6 px-4">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-[10px] uppercase tracking-wider text-[#6b6b6b] border border-[#2a2a2a] px-1.5 py-0.5">Ana Duvar</span>
+          <span className="text-[10px] uppercase tracking-wider text-[#8a8a8a] border border-[#2a2a2a] px-1.5 py-0.5">Ana Duvar</span>
         </div>
         <h1 className="text-xl font-bold text-white leading-snug">Ana Duvar — yeni güzergahlar hakkında</h1>
-        <p className="text-[11px] text-[#6b6b6b] mt-1">kemal_tas · 2s önce</p>
+        <p className="text-[11px] text-[#8a8a8a] mt-1">kemal_tas · 2s önce</p>
       </div>
 
       <div className="bg-[#161616] border border-[#2a2a2a] p-5 mb-6">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-[#2a2a2a] flex items-center justify-center shrink-0">
-            <User size={14} className="text-[#6b6b6b]" />
+            <User size={14} className="text-[#8a8a8a]" />
           </div>
           <span className="text-sm font-medium text-[#e8e8e8]">kemal_tas</span>
-          <span className="text-[11px] text-[#6b6b6b]">· 2s önce</span>
+          <span className="text-[11px] text-[#8a8a8a]">· 2s önce</span>
         </div>
         <div className="mt-3 text-sm text-[#e8e8e8] leading-relaxed whitespace-pre-wrap">
           {'Merhaba, Ana Duvar\'da birkaç yeni güzergah keşfettim.\n\nBaşlangıç tutuşu biraz garip ama bir kez adam ettikten sonra çok akıcı gidiyor. Bilen var mı?'}

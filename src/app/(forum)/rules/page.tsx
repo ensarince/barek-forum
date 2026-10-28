@@ -50,7 +50,7 @@ export default async function RulesPage() {
 function RulesView({ title, content }: { title: string; content: string }) {
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
-      <h1 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">{title}</h1>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">{title}</h1>
       <div className="bg-[#161616] border border-[#2a2a2a] p-6">
         <RulesContent content={content} />
       </div>
@@ -68,10 +68,10 @@ function RulesContent({ content }: { content: string }) {
           return <h2 key={i} className="text-base font-bold text-white uppercase tracking-wider mt-6 mb-2 first:mt-0">{line.slice(3)}</h2>
         }
         if (line.startsWith('### ')) {
-          return <h3 key={i} className="text-sm font-semibold text-[#c0392b] uppercase tracking-wider mt-4 mb-1">{line.slice(4)}</h3>
+          return <h3 key={i} className="text-sm font-semibold text-[#e05a4a] uppercase tracking-wider mt-4 mb-1">{line.slice(4)}</h3>
         }
         if (line.startsWith('- ')) {
-          return <p key={i} className="flex gap-2 text-[#c8c8c8]"><span className="text-[#8b1a1a] shrink-0">—</span><span>{line.slice(2)}</span></p>
+          return <p key={i} className="flex gap-2 text-[#c8c8c8]"><span className="text-[#e05a4a] shrink-0">—</span><span>{line.slice(2)}</span></p>
         }
         if (line.trim() === '') {
           return <div key={i} className="h-1" />

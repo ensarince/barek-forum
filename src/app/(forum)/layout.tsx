@@ -35,7 +35,7 @@ function ConnectionError() {
     <div className="min-h-[100dvh] flex items-center justify-center bg-[#0d0d0d] px-4">
       <div className="text-center max-w-xs">
         <p className="text-[#e8e8e8] text-sm">Bağlantı kurulamadı.</p>
-        <p className="text-[#6b6b6b] text-xs mt-2">Hesabında bir sorun yok — sunucuya ulaşılamadı.</p>
+        <p className="text-[#8a8a8a] text-xs mt-2">Hesabında bir sorun yok — sunucuya ulaşılamadı.</p>
         {/* Plain anchor on purpose — a client-side <Link> to the route we are already
             on would not re-run this layout, and a full reload is the retry. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
@@ -50,8 +50,13 @@ function ConnectionError() {
   )
 }
 
+// Banner rotates once a day; this is a server component, rendered per request
+function todaysBannerIndex() {
+  return Math.floor(Date.now() / 86400000) % 6
+}
+
 export default async function ForumLayout({ children }: { children: React.ReactNode }) {
-  const bannerIndex = Math.floor(Date.now() / 86400000) % 6
+  const bannerIndex = todaysBannerIndex()
 
   if (!SUPABASE_CONFIGURED) {
     return (

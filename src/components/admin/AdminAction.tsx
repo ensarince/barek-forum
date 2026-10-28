@@ -80,7 +80,7 @@ export default function AdminAction({ type, id, currentStatus }: AdminActionProp
       {type === 'topic' && (
         confirmDelete ? (
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-[#6b6b6b]">Emin misin?</span>
+            <span className="text-[11px] text-[#8a8a8a]">Emin misin?</span>
             <button
               onClick={deleteTopic}
               disabled={loading !== null}
@@ -90,7 +90,7 @@ export default function AdminAction({ type, id, currentStatus }: AdminActionProp
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="px-2 py-1 text-xs text-[#6b6b6b] hover:text-white transition-colors"
+              className="px-2 py-1 text-xs text-[#8a8a8a] hover:text-white transition-colors"
             >
               İptal
             </button>
@@ -100,7 +100,7 @@ export default function AdminAction({ type, id, currentStatus }: AdminActionProp
             onClick={() => setConfirmDelete(true)}
             disabled={loading !== null}
             title="Konuyu sil"
-            className="text-[#4a4a4a] hover:text-red-400 transition-colors disabled:opacity-40 p-1"
+            className="text-[#8a8a8a] hover:text-red-400 transition-colors disabled:opacity-40 p-1"
           >
             <Trash2 size={14} />
           </button>

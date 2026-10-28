@@ -78,17 +78,17 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
           <Image src={logoSrc} alt="Barek" height={192} width={192} className="h-48 w-auto mx-auto" />
-          <p className="text-[#6b6b6b] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
+          <p className="text-[#8a8a8a] text-sm mt-3 tracking-wider uppercase">Bouldering Forum</p>
         </div>
 
         {!ready && !error && (
-          <p className="text-center text-[#6b6b6b] text-sm">Doğrulanıyor...</p>
+          <p className="text-center text-[#8a8a8a] text-sm">Doğrulanıyor...</p>
         )}
 
         {error && !ready && (
           <div className="text-center space-y-4">
-            <p className="text-[#c0392b] text-sm">{error}</p>
-            <Link href="/forgot-password" className="block text-[#6b6b6b] text-sm hover:text-white transition-colors">
+            <p className="text-[#e05a4a] text-sm">{error}</p>
+            <Link href="/forgot-password" className="block text-[#8a8a8a] text-sm hover:text-white transition-colors">
               Yeni bağlantı talep et →
             </Link>
           </div>
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
 
         {ready && (
           <>
-            <p className="text-[#6b6b6b] text-sm mb-6 text-center">Yeni şifreni belirle.</p>
+            <p className="text-[#8a8a8a] text-sm mb-6 text-center">Yeni şifreni belirle.</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <input
@@ -104,8 +104,10 @@ export default function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Yeni şifre"
+                  aria-label="Yeni şifre"
+                  autoComplete="new-password"
                   required
-                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
                 />
               </div>
               <div>
@@ -114,12 +116,14 @@ export default function ResetPasswordPage() {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   placeholder="Şifreyi tekrarla"
+                  aria-label="Şifreyi tekrarla"
+                  autoComplete="new-password"
                   required
-                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-sm focus:outline-none focus:border-[#8b1a1a] placeholder-[#6b6b6b]"
+                  className="w-full bg-[#161616] border border-[#2a2a2a] text-[#e8e8e8] px-4 py-3 text-base sm:text-sm focus:outline-none focus:border-[#e05a4a] placeholder-[#8a8a8a]"
                 />
               </div>
 
-              {error && <p className="text-[#c0392b] text-sm">{error}</p>}
+              {error && <p role="alert" className="text-[#e05a4a] text-sm">{error}</p>}
 
               <button
                 type="submit"

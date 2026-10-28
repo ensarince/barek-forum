@@ -41,15 +41,15 @@ export default async function BugReportsPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b] mb-6">
+      <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a] mb-6">
         Hata Raporları
         {open.length > 0 && (
-          <span className="ml-2 text-[#c0392b]">({open.length} açık)</span>
+          <span className="ml-2 text-[#e05a4a]">({open.length} açık)</span>
         )}
       </h1>
 
       {reports.length === 0 ? (
-        <p className="text-[#6b6b6b] text-sm">Henüz hata raporu yok.</p>
+        <p className="text-[#8a8a8a] text-sm">Henüz hata raporu yok.</p>
       ) : (
         <div className="space-y-2">
           {[...open, ...resolved].map((report) => (
@@ -67,7 +67,7 @@ export default async function BugReportsPage() {
                     <span className="text-xs font-medium text-[#a0a0a0]">
                       {report.reporter?.[0]?.username ?? 'bilinmiyor'}
                     </span>
-                    <span className="text-[10px] text-[#4a4a4a]">{formatDate(report.created_at)}</span>
+                    <span className="text-[10px] text-[#8a8a8a]">{formatDate(report.created_at)}</span>
                     {report.status === 'resolved' && (
                       <span className="text-[10px] text-green-700 uppercase tracking-wider">çözüldü</span>
                     )}
@@ -76,7 +76,7 @@ export default async function BugReportsPage() {
                     {report.description}
                   </p>
                   {report.page_url && (
-                    <p className="text-[11px] text-[#3a3a3a] mt-2 truncate font-mono" title={report.page_url}>
+                    <p className="text-[11px] text-[#8a8a8a] mt-2 truncate font-mono" title={report.page_url}>
                       {report.page_url}
                     </p>
                   )}

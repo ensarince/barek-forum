@@ -23,15 +23,15 @@ function TopicRow({ topic }: { topic: TopicWithMeta }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-white font-medium truncate">{topic.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-[#6b6b6b]">{topic.author?.username}</span>
+          <span className="text-xs text-[#8a8a8a]">{topic.author?.username}</span>
           {topic.sector && (
-            <span className="text-[10px] text-[#6b6b6b] border border-[#2a2a2a] px-1">{topic.sector.name}</span>
+            <span className="text-[10px] text-[#8a8a8a] border border-[#2a2a2a] px-1">{topic.sector.name}</span>
           )}
         </div>
       </div>
-      <p className="text-xs text-[#6b6b6b] hidden sm:block shrink-0">{formatDistanceToNow(topic.created_at)}</p>
+      <p className="text-xs text-[#8a8a8a] hidden sm:block shrink-0">{formatDistanceToNow(topic.created_at)}</p>
       <StatusBadge status={topic.status} />
-      <Link href={`/topics/${topic.id}`} className="text-xs text-[#6b6b6b] hover:text-white transition-colors shrink-0">
+      <Link href={`/topics/${topic.id}`} className="text-xs text-[#8a8a8a] hover:text-white transition-colors shrink-0">
         Gör →
       </Link>
       <AdminAction type="topic" id={topic.id} currentStatus={topic.status} />
@@ -43,7 +43,7 @@ function Section({ title, topics }: { title: string; topics: TopicWithMeta[] }) 
   if (topics.length === 0) return null
   return (
     <div className="mb-8">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3 px-4">{title} ({topics.length})</h2>
+      <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-3 px-4">{title} ({topics.length})</h2>
       <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a]">
         {topics.map((t) => <TopicRow key={t.id} topic={t} />)}
       </div>
@@ -69,7 +69,7 @@ export default async function AdminTopicsPage() {
 
   return (
     <div className="p-6 max-w-4xl">
-      <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b] mb-6">Konular</h1>
+      <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a] mb-6">Konular</h1>
       <Section title="Onay Bekleyenler" topics={pending} />
       <Section title="Onaylananlar" topics={approved} />
       <Section title="Reddedilenler" topics={rejected} />

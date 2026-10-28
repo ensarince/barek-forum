@@ -18,10 +18,10 @@ function StatCardUI({ label, value, href, highlight }: StatCard) {
       href={href}
       className="block bg-[#161616] border border-[#2a2a2a] border-l-2 border-l-[#8b1a1a] p-5 hover:bg-[#1a1a1a] transition-colors"
     >
-      <p className={`text-4xl font-black mb-1 ${highlight && value > 0 ? 'text-[#c0392b]' : 'text-white'}`}>
+      <p className={`text-4xl font-black mb-1 ${highlight && value > 0 ? 'text-[#e05a4a]' : 'text-white'}`}>
         {value}
       </p>
-      <p className="text-xs uppercase tracking-[0.15em] text-[#6b6b6b]">{label}</p>
+      <p className="text-xs uppercase tracking-[0.15em] text-[#8a8a8a]">{label}</p>
     </Link>
   )
 }
@@ -54,7 +54,7 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b] mb-6">Dashboard</h1>
+      <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a] mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-3">
         <StatCardUI label="Onay Bekleyen Üyeler" value={stats.pendingUsers} href="/admin/users" highlight />

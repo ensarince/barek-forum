@@ -30,11 +30,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex h-screen bg-[#0d0d0d]">
+    <div className="flex h-screen h-dvh bg-[#0d0d0d]">
       {/* Admin sidebar */}
       <aside className="w-14 sm:w-48 bg-[#0a0a0a] border-r border-[#2a2a2a] flex flex-col shrink-0">
         <div className="h-12 flex items-center px-3 sm:px-4 border-b border-[#2a2a2a]">
-          <span className="text-[#8b1a1a] font-black text-xs sm:text-sm tracking-[0.3em] uppercase">
+          <span className="text-[#e05a4a] font-black text-xs sm:text-sm tracking-[0.3em] uppercase">
             <span className="hidden sm:inline">ADMIN</span>
             <span className="sm:hidden">A</span>
           </span>
@@ -45,7 +45,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-3 px-2 py-2 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1a] transition-colors group"
+              className="flex items-center gap-3 px-2 py-2 text-[#8a8a8a] hover:text-white hover:bg-[#1a1a1a] transition-colors group"
             >
               <Icon size={15} className="shrink-0 group-hover:text-[#c0392b]" />
               <span className="hidden sm:block text-sm">{label}</span>
@@ -56,7 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="p-2 border-t border-[#2a2a2a]">
           <Link
             href="/"
-            className="flex items-center gap-3 px-2 py-2 text-[#6b6b6b] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+            className="flex items-center gap-3 px-2 py-2 text-[#8a8a8a] hover:text-white hover:bg-[#1a1a1a] transition-colors"
           >
             <ArrowLeft size={15} className="shrink-0" />
             <span className="hidden sm:block text-sm">Forum</span>

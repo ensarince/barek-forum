@@ -67,14 +67,14 @@ export default async function SectorPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-4">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#8a8a8a] hover:text-white transition-colors mb-4">
         <ArrowLeft size={12} />
         Ana Sayfa
       </Link>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-1">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-0.5">Sektör</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-0.5">Sektör</p>
             <h1 className="text-lg font-bold text-white uppercase tracking-wider">{sector.name}</h1>
           </div>
           <RefreshButton />
@@ -106,7 +106,7 @@ export default async function SectorPage({ params }: PageProps) {
                 <p className={`text-sm leading-snug truncate ${isUnread ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>
                   {topic.title}
                 </p>
-                <div className="flex items-center gap-x-3 gap-y-0 flex-wrap mt-1.5 text-[11px] text-[#6b6b6b]">
+                <div className="flex items-center gap-x-3 gap-y-0 flex-wrap mt-1.5 text-[11px] text-[#8a8a8a]">
                   <span className="truncate max-w-[10rem]">{topic.author?.username ?? 'bilinmiyor'}</span>
                   <span>·</span>
                   <span className="flex items-center gap-1 shrink-0"><MessageSquare size={11} />{replyCount}</span>
@@ -118,7 +118,7 @@ export default async function SectorPage({ params }: PageProps) {
           )
         })}
         {topics.length === 0 && (
-          <p className="text-[#6b6b6b] text-sm py-8 text-center">Bu sektörde henüz konu yok.</p>
+          <p className="text-[#8a8a8a] text-sm py-8 text-center">Bu sektörde henüz konu yok.</p>
         )}
       </div>
     </div>
@@ -133,13 +133,13 @@ function PreviewSector() {
   ]
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#6b6b6b] hover:text-white transition-colors mb-4">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[11px] text-[#8a8a8a] hover:text-white transition-colors mb-4">
         <ArrowLeft size={12} />
         Ana Sayfa
       </Link>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-0.5">Sektör</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-0.5">Sektör</p>
           <h1 className="text-lg font-bold text-white uppercase tracking-wider">Ana Duvar</h1>
         </div>
         <Link href="/topics/new" className="text-xs uppercase tracking-widest bg-[#8b1a1a] hover:bg-[#a82020] text-white px-4 py-2 transition-colors">
@@ -154,7 +154,7 @@ function PreviewSector() {
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-sm leading-snug truncate ${t.unread ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>{t.title}</p>
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#6b6b6b]">
+              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[#8a8a8a]">
                 <span>{t.author}</span><span>·</span>
                 <span className="flex items-center gap-1"><MessageSquare size={11} />{t.replies}</span>
                 <span>·</span><span>{t.ago}</span>

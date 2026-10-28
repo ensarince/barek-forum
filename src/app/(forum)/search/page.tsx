@@ -26,7 +26,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   if (!query) {
     return (
       <div className="max-w-3xl mx-auto py-8 px-4">
-        <p className="text-[#6b6b6b] text-sm">Aramak için bir kelime gir.</p>
+        <p className="text-[#8a8a8a] text-sm">Aramak için bir kelime gir.</p>
       </div>
     )
   }
@@ -69,19 +69,19 @@ export default async function SearchPage({ searchParams }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">
+        <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a]">
           &ldquo;{query}&rdquo; için {total} sonuç
         </h1>
         <div className="flex-1 border-t border-[#2a2a2a]" />
       </div>
 
       {total === 0 && (
-        <p className="text-[#6b6b6b] text-sm">Hiç sonuç bulunamadı.</p>
+        <p className="text-[#8a8a8a] text-sm">Hiç sonuç bulunamadı.</p>
       )}
 
       {sectors.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">
             Sektörler ({sectors.length})
           </h2>
           <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a]">
@@ -95,7 +95,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                   <Highlight text={s.name} query={query} />
                 </p>
                 {s.description && (
-                  <p className="text-xs text-[#6b6b6b] mt-0.5">{s.description}</p>
+                  <p className="text-xs text-[#8a8a8a] mt-0.5">{s.description}</p>
                 )}
               </Link>
             ))}
@@ -105,7 +105,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
       {topics.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">
             Konular ({topics.length})
           </h2>
           <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a]">
@@ -118,12 +118,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 <p className="text-sm text-[#e8e8e8] font-medium leading-snug">
                   <Highlight text={t.title} query={query} />
                 </p>
-                <p className="text-xs text-[#6b6b6b] mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-[#8a8a8a] mt-1 line-clamp-2 leading-relaxed">
                   <Highlight text={t.content} query={query} />
                 </p>
-                <p className="text-[11px] text-[#4a4a4a] mt-1">
+                <p className="text-[11px] text-[#8a8a8a] mt-1">
                   {t.author?.username ?? 'bilinmiyor'} · {formatDistanceToNow(t.created_at)}
-                  {t.sector && <span className="ml-2 text-[#6b6b6b]">· {t.sector.name}</span>}
+                  {t.sector && <span className="ml-2 text-[#8a8a8a]">· {t.sector.name}</span>}
                 </p>
               </Link>
             ))}
@@ -133,7 +133,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
       {posts.length > 0 && (
         <section>
-          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">
             Yanıtlar ({posts.length})
           </h2>
           <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a]">
@@ -143,13 +143,13 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 href={`/topics/${p.topic_id}`}
                 className="block px-4 py-3 hover:bg-[#161616] transition-colors"
               >
-                <p className="text-[10px] uppercase tracking-wider text-[#8b1a1a] mb-1 truncate">
+                <p className="text-[10px] uppercase tracking-wider text-[#e05a4a] mb-1 truncate">
                   {p.topic?.title ?? ''}
                 </p>
                 <p className="text-sm text-[#a0a0a0] line-clamp-2 leading-relaxed">
                   <Highlight text={p.content} query={query} />
                 </p>
-                <p className="text-[11px] text-[#4a4a4a] mt-1">
+                <p className="text-[11px] text-[#8a8a8a] mt-1">
                   {p.author?.username ?? 'bilinmiyor'} · {formatDistanceToNow(p.created_at)}
                 </p>
               </Link>

@@ -54,7 +54,7 @@ export default async function NotificationsPage() {
 function NotifList({ notifs }: { notifs: Notification[] }) {
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Bildirimler</h2>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Bildirimler</h1>
 
       <div className="divide-y divide-[#2a2a2a]">
         {notifs.map((n) => {
@@ -83,14 +83,14 @@ function NotifList({ notifs }: { notifs: Notification[] }) {
                 <p className={`text-sm ${!n.is_read ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>
                   {notifLabel(n.type)}
                 </p>
-                <p className="text-[11px] text-[#6b6b6b] mt-0.5">{formatDistanceToNow(n.created_at)}</p>
+                <p className="text-[11px] text-[#8a8a8a] mt-0.5">{formatDistanceToNow(n.created_at)}</p>
               </div>
             </Link>
           )
         })}
 
         {notifs.length === 0 && (
-          <p className="text-[#6b6b6b] text-sm py-8 text-center">Henüz bildirim yok.</p>
+          <p className="text-[#8a8a8a] text-sm py-8 text-center">Henüz bildirim yok.</p>
         )}
       </div>
     </div>
@@ -105,7 +105,7 @@ function PreviewNotifications() {
   ]
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-6">Bildirimler</h2>
+      <h1 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-6">Bildirimler</h1>
       <div className="divide-y divide-[#2a2a2a]">
         {items.map((n) => (
           <div key={n.id} className="flex items-start gap-3 py-4 hover:bg-[#161616] -mx-4 px-4 transition-colors cursor-pointer">
@@ -116,7 +116,7 @@ function PreviewNotifications() {
               <p className={`text-sm ${!n.is_read ? 'font-semibold text-white' : 'text-[#c8c8c8]'}`}>
                 {notifLabel(n.type)}
               </p>
-              <p className="text-[11px] text-[#6b6b6b] mt-0.5">{n.ago}</p>
+              <p className="text-[11px] text-[#8a8a8a] mt-0.5">{n.ago}</p>
             </div>
           </div>
         ))}

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Topbar from './Topbar'
 import Sidebar from './Sidebar'
+import { useDialog } from '@/lib/useDialog'
 import type { Profile, Sector } from '@/types/database'
 
 const BANNERS = [
@@ -28,6 +29,8 @@ interface ForumShellProps {
 export default function ForumShell({ profile, unreadCount, sectors, sectorCounts, bannerIndex, children }: ForumShellProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(bannerIndex)
+  const drawerRef = useDialog<HTMLDivElement>(menuOpen, () => setMenuOpen(false))
+  const touchStartX = useRef<number | null>(null)
 
   function prev() { setActiveIndex((i) => (i - 1 + BANNERS.length) % BANNERS.length) }
   function next() { setActiveIndex((i) => (i + 1) % BANNERS.length) }
@@ -42,8 +45,17 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         />
       </div>
 
-      {/* Full-width banner with hover-reveal carousel controls */}
-      <div className="group relative w-full overflow-hidden shrink-0 h-[12vh] sm:h-[20vh]">
+      {/* Full-width banner — hover reveals controls on desktop, swipe on touch */}
+      <div
+        className="group relative w-full overflow-hidden shrink-0 h-[12vh] sm:h-[20vh]"
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return
+          const dx = e.changedTouches[0].clientX - touchStartX.current
+          touchStartX.current = null
+          if (Math.abs(dx) > 40) { if (dx < 0) next(); else prev() }
+        }}
+      >
         <Image
           src={BANNERS[activeIndex]}
           alt=""
@@ -56,8 +68,8 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         {/* Prev button */}
         <button
           onClick={prev}
-          aria-label="Önceki"
-          className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-1"
+          aria-label="Önceki görsel"
+          className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-2 hidden sm:block"
         >
           <ChevronLeft size={18} />
         </button>
@@ -65,21 +77,24 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
         {/* Next button */}
         <button
           onClick={next}
-          aria-label="Sonraki"
-          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-1"
+          aria-label="Sonraki görsel"
+          className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity bg-black/40 hover:bg-black/70 text-white rounded-full p-2 hidden sm:block"
         >
           <ChevronRight size={18} />
         </button>
 
-        {/* Dot indicators */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Dot indicators — always visible on touch, padded hit area */}
+        <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           {BANNERS.map((_, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
               aria-label={`Görsel ${i + 1}`}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeIndex ? 'bg-white' : 'bg-white/40 hover:bg-white/70'}`}
-            />
+              aria-current={i === activeIndex}
+              className="p-1.5"
+            >
+              <span className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === activeIndex ? 'bg-white' : 'bg-white/40 hover:bg-white/70'}`} />
+            </button>
           ))}
         </div>
       </div>
@@ -94,15 +109,23 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
             <div
               className="absolute inset-0 bg-black/70"
               onClick={() => setMenuOpen(false)}
+              aria-hidden="true"
             />
-            <div className="absolute left-0 top-0 h-full w-64 bg-[#111111] border-r border-[#2a2a2a] flex flex-col overflow-y-auto">
+            <div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="drawer-title"
+              className="absolute left-0 top-0 h-full w-64 max-w-[85vw] bg-[#111111] border-r border-[#2a2a2a] flex flex-col overflow-y-auto overscroll-contain"
+            >
               <div className="flex items-center justify-between px-4 h-16 border-b border-[#2a2a2a] shrink-0">
-                <span className="text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b]">Menü</span>
+                <span id="drawer-title" className="text-[10px] uppercase tracking-[0.2em] text-[#8a8a8a]">Menü</span>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="text-[#6b6b6b] hover:text-white transition-colors"
+                  aria-label="Menüyü kapat"
+                  className="p-2.5 -m-2.5 text-[#8a8a8a] hover:text-white transition-colors"
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </div>
               <Sidebar

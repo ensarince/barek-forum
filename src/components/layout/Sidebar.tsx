@@ -35,7 +35,7 @@ export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: Sid
 
         {/* Sectors */}
         <div className="p-3">
-          <p className="text-[10px] uppercase tracking-[0.15em] text-[#6b6b6b] mb-2 px-2">Sektörler</p>
+          <p className="text-[10px] uppercase tracking-[0.15em] text-[#8a8a8a] mb-2 px-2">Sektörler</p>
           <nav className="space-y-0.5">
             {sectors.map((sector) => (
               <SidebarLink
@@ -55,9 +55,9 @@ export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: Sid
         <nav className="p-3 space-y-0.5">
           <button
             onClick={() => setBugReportOpen(true)}
-            className="flex items-center gap-2.5 px-2 py-1.5 text-sm transition-colors w-full text-left text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent"
+            className="flex items-center gap-2.5 px-2 py-2.5 sm:py-1.5 text-sm transition-colors w-full text-left text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent"
           >
-            <span className="text-[#6b6b6b]"><Bug size={14} /></span>
+            <span className="text-[#8a8a8a]"><Bug size={14} /></span>
             <span className="flex-1 truncate">Hata Bildir</span>
           </button>
           <SidebarLink href="/gizlilik" icon={<Shield size={14} />} label="Gizlilik" active={isActive('/gizlilik')} onClick={onLinkClick} />
@@ -89,16 +89,17 @@ function SidebarLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-2.5 px-2 py-1.5 text-sm transition-colors ${
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-2.5 px-2 py-2.5 sm:py-1.5 text-sm transition-colors ${
         active
           ? 'text-white bg-[#1e1e1e] border-l-2 border-[#8b1a1a]'
           : 'text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent'
       }`}
     >
-      {icon && <span className={active ? 'text-[#c0392b]' : 'text-[#6b6b6b]'}>{icon}</span>}
+      {icon && <span className={active ? 'text-[#e05a4a]' : 'text-[#8a8a8a]'}>{icon}</span>}
       <span className="flex-1 truncate">{label}</span>
       {count !== undefined && count > 0 && (
-        <span className="text-[10px] text-[#4a4a4a] shrink-0">{count}</span>
+        <span className="text-[10px] text-[#8a8a8a] shrink-0">{count}</span>
       )}
     </Link>
   )

@@ -33,7 +33,7 @@ export default async function ProfilePage({ params }: PageProps) {
   if (!profile) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-[#6b6b6b] text-sm">Kullanıcı bulunamadı.</p>
+        <p className="text-[#8a8a8a] text-sm">Kullanıcı bulunamadı.</p>
       </div>
     )
   }
@@ -116,9 +116,9 @@ function ProfileView({
                 )}
               </div>
               {profile.full_name && (
-                <p className="text-[#6b6b6b] text-sm mt-0.5">{profile.full_name}</p>
+                <p className="text-[#8a8a8a] text-sm mt-0.5">{profile.full_name}</p>
               )}
-              <p className="text-[#6b6b6b] text-xs mt-2">
+              <p className="text-[#8a8a8a] text-xs mt-2">
                 Üye: {formatMonthYear(profile.created_at)}
               </p>
             </div>
@@ -132,7 +132,7 @@ function ProfileView({
                     href={link.href!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[#6b6b6b] hover:text-white text-xs border border-[#2a2a2a] px-3 py-1.5 hover:border-[#8b1a1a] transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[#8a8a8a] hover:text-white text-xs border border-[#2a2a2a] px-3 py-1.5 hover:border-[#8b1a1a] transition-colors"
                   >
                     <ExternalLink size={11} />
                     {link.label}
@@ -147,7 +147,7 @@ function ProfileView({
         <div className="flex-1 space-y-8">
           {/* Recent topics */}
           <div>
-            <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">
+            <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">
               Son Konular
             </h2>
             {topics.length > 0 ? (
@@ -159,18 +159,18 @@ function ProfileView({
                     className="block px-4 py-3 hover:bg-[#161616] transition-colors"
                   >
                     <p className="text-sm text-[#e8e8e8] hover:text-white truncate">{t.title}</p>
-                    <p className="text-[11px] text-[#6b6b6b] mt-0.5">{formatDistanceToNow(t.created_at)}</p>
+                    <p className="text-[11px] text-[#8a8a8a] mt-0.5">{formatDistanceToNow(t.created_at)}</p>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-[#6b6b6b] text-sm">Henüz konu yok.</p>
+              <p className="text-[#8a8a8a] text-sm">Henüz konu yok.</p>
             )}
           </div>
 
           {/* Recent replies */}
           <div>
-            <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3">
+            <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-3">
               Son Yanıtlar
             </h2>
             {posts.length > 0 ? (
@@ -184,12 +184,12 @@ function ProfileView({
                     <p className="text-sm text-[#a0a0a0] line-clamp-2 leading-relaxed">
                       {p.content.slice(0, 120)}{p.content.length > 120 ? '…' : ''}
                     </p>
-                    <p className="text-[11px] text-[#6b6b6b] mt-0.5">{formatDistanceToNow(p.created_at)}</p>
+                    <p className="text-[11px] text-[#8a8a8a] mt-0.5">{formatDistanceToNow(p.created_at)}</p>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-[#6b6b6b] text-sm">Henüz yanıt yok.</p>
+              <p className="text-[#8a8a8a] text-sm">Henüz yanıt yok.</p>
             )}
           </div>
         </div>

@@ -23,9 +23,9 @@ function UserRow({ user }: { user: Profile }) {
     <div className="flex items-center gap-4 py-3 px-4 hover:bg-[#161616] transition-colors">
       <div className="flex-1 min-w-0">
         <p className="text-sm text-white font-medium">{user.username}</p>
-        {user.full_name && <p className="text-xs text-[#6b6b6b]">{user.full_name}</p>}
+        {user.full_name && <p className="text-xs text-[#8a8a8a]">{user.full_name}</p>}
       </div>
-      <p className="text-xs text-[#6b6b6b] hidden sm:block shrink-0">{formatDistanceToNow(user.created_at)}</p>
+      <p className="text-xs text-[#8a8a8a] hidden sm:block shrink-0">{formatDistanceToNow(user.created_at)}</p>
       <StatusBadge status={user.status} />
       <AdminAction type="user" id={user.id} currentStatus={user.status} />
     </div>
@@ -36,7 +36,7 @@ function Section({ title, users }: { title: string; users: Profile[] }) {
   if (users.length === 0) return null
   return (
     <div className="mb-8">
-      <h2 className="text-xs uppercase tracking-[0.2em] text-[#6b6b6b] mb-3 px-4">{title} ({users.length})</h2>
+      <h2 className="text-xs uppercase tracking-[0.2em] text-[#8a8a8a] mb-3 px-4">{title} ({users.length})</h2>
       <div className="border border-[#2a2a2a] divide-y divide-[#2a2a2a]">
         {users.map((u) => <UserRow key={u.id} user={u} />)}
       </div>
@@ -59,7 +59,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-xs uppercase tracking-[0.25em] text-[#6b6b6b] mb-6">Üyeler</h1>
+      <h1 className="text-xs uppercase tracking-[0.25em] text-[#8a8a8a] mb-6">Üyeler</h1>
       <Section title="Onay Bekleyenler" users={pending} />
       <Section title="Onaylananlar" users={approved} />
       <Section title="Reddedilenler" users={rejected} />
