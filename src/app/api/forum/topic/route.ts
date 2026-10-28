@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
 import { emailAdminsNewTopic, emailAllUsersAnnouncement, emailUserMentioned } from '@/lib/email'
+import { isAllowedImage } from '@/lib/images'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
   }
   if ((images ?? []).length > 5) {
     return NextResponse.json({ error: 'En fazla 5 fotoğraf eklenebilir.' }, { status: 400 })
+  }
+  // Only our Cloudinary uploads and Giphy GIFs
+  if (!Array.isArray(images ?? []) || !(images ?? []).every(isAllowedImage)) {
+    return NextResponse.json({ error: 'Geçersiz fotoğraf.' }, { status: 400 })
   }
 
   // Validate sector if provided
@@ -132,14 +137,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Save images attached to the opening post
-  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL
-  const validatedImages = (images ?? []).filter((img) => {
-    if (img.publicId?.startsWith('giphy_')) {
-      return /^https:\/\/media\d?\.giphy\.com\//.test(img.url)
-    }
-    return true
-  })
+  // Save images attached to the opening post (already validated above)
+  const validatedImages = images ?? []
 
   let savedImages: ImageRow[] = []
   if (validatedImages.length > 0) {
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
     const uniqueMentions = [...new Set(mentionedUsernames)]
     if (uniqueMentions.length > 0) {
       const svc = createServiceClient()
-      const { data: mentionedProfiles } = await svc.from('profiles').select('id, username').in('username', uniqueMentions)
+      const { data: mentionedProfiles } = await svc.from('profiles').select('id, username').in('username', uniqueMentions).eq('status', 'approved')
       const mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[]).filter((p) => p.id !== user.id)
       if (mentionedUsers.length > 0) {
         await svc.from('notifications').insert(
@@ -190,13 +189,17 @@ export async function PATCH(request: NextRequest) {
 
   const { topic_id, content } = await request.json() as { topic_id: string; content: string }
   if (!topic_id || !content?.trim()) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+  if (content.trim().length > 50000) {
+    return NextResponse.json({ error: 'İçerik çok uzun (max 50.000 karakter).' }, { status: 400 })
+  }
 
   const { data: topicData } = await supabase.from('topics').select('author_id').eq('id', topic_id).single()
   const topic = topicData as { author_id: string } | null
   if (!topic) return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
 
-  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const profile = profileData as Pick<Profile, 'role'> | null
+  const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role' | 'status'> | null
+  if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   if (topic.author_id !== user.id && profile?.role !== 'admin') {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }

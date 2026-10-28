@@ -26,19 +26,24 @@ export async function POST(request: NextRequest) {
     if (!description || description.trim().length < 10) {
       return NextResponse.json({ error: 'Açıklama çok kısa (en az 10 karakter).' }, { status: 400 })
     }
+    if (description.trim().length > 5000) {
+      return NextResponse.json({ error: 'Açıklama çok uzun (max 5.000 karakter).' }, { status: 400 })
+    }
+    const safePageUrl = typeof pageUrl === 'string' ? pageUrl.slice(0, 500) : null
 
     const service = createServiceClient()
-    await service.from('bug_reports').insert({
+    const { error: insertError } = await service.from('bug_reports').insert({
       reporter_id: user.id,
       description: description.trim(),
-      page_url: pageUrl ?? null,
+      page_url: safePageUrl,
       status: 'open',
     })
+    if (insertError) return NextResponse.json({ error: 'Rapor kaydedilemedi.' }, { status: 500 })
 
     const { data: adminProfiles } = await service.from('profiles').select('id').eq('role', 'admin')
     const adminIds = ((adminProfiles ?? []) as { id: string }[]).map((a) => a.id)
     if (adminIds.length > 0) {
-      await emailAdminBugReport(adminIds, profile.username, description.trim(), pageUrl ?? '')
+      await emailAdminBugReport(adminIds, profile.username, description.trim(), safePageUrl ?? '')
     }
 
     return NextResponse.json({ success: true })
@@ -63,7 +68,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     const service = createServiceClient()
-    await service.from('bug_reports').update({ status }).eq('id', id)
+    const { error: updateError } = await service.from('bug_reports').update({ status }).eq('id', id)
+    if (updateError) return NextResponse.json({ error: 'Güncelleme başarısız.' }, { status: 500 })
 
     return NextResponse.json({ success: true })
   } catch {

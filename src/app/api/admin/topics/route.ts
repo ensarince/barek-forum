@@ -43,11 +43,12 @@ export async function POST(request: Request) {
 
     const body = await request.json() as { topicId: string; action: 'approve' | 'reject' }
     const { topicId, action } = body
-    if (!topicId || !action) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+    if (!topicId || (action !== 'approve' && action !== 'reject')) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
     const service = createServiceClient()
-    const { data: topicData } = await service.from('topics').select('author_id, title, status').eq('id', topicId).single()
-    const topic = topicData as Pick<Topic, 'author_id' | 'title' | 'status'> | null
+    const { data: topicData } = await service.from('topics').select('author_id, title, status, is_deleted').eq('id', topicId).single()
+    const topic = topicData as Pick<Topic, 'author_id' | 'title' | 'status' | 'is_deleted'> | null
+    if (!topic || topic.is_deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
 

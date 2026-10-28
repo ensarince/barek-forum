@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
 import { emailUserNewReply, emailUserMentioned } from '@/lib/email'
+import { isAllowedImage } from '@/lib/images'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -26,15 +27,12 @@ export async function POST(request: NextRequest) {
   }
   const { topic_id, content, parent_post_id = null, images, with_poll } = body
 
-  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL (media.giphy.com or media0-4.giphy.com)
-  const validatedImages = (images ?? []).filter((img) => {
-    if (img.publicId?.startsWith('giphy_')) {
-      return /^https:\/\/media\d?\.giphy\.com\//.test(img.url)
-    }
-    return true
-  })
+  // Only our Cloudinary uploads and Giphy GIFs — reject the whole reply rather than silently dropping images
+  const validatedImages = images ?? []
+  if (!Array.isArray(validatedImages) || !validatedImages.every(isAllowedImage)) {
+    return NextResponse.json({ error: 'Geçersiz fotoğraf.' }, { status: 400 })
+  }
 
-  // Check after validation so a reply whose only GIF got rejected isn't saved empty
   if (validatedImages.length === 0 && (!content || !content.trim())) {
     return NextResponse.json({ error: 'Yanıt boş olamaz.' }, { status: 400 })
   }
@@ -173,6 +171,7 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .select('id, username')
       .in('username', uniqueUsernames)
+      .eq('status', 'approved')
     mentionedUsers = ((mentionedProfiles ?? []) as { id: string; username: string }[])
       .filter((p) => p.id !== user.id)
     if (mentionedUsers.length > 0) {
@@ -220,19 +219,30 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { post_id, content } = await request.json() as { post_id: string; content: string }
-  if (!post_id || !content?.trim()) return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+  if (!post_id || typeof content !== 'string') return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
+  if (content.length > 20000) {
+    return NextResponse.json({ error: 'Yanıt çok uzun (max 20.000 karakter).' }, { status: 400 })
+  }
 
-  const { data: postData } = await supabase.from('posts').select('author_id').eq('id', post_id).single()
-  const post = postData as Pick<Post, 'author_id'> | null
-  if (!post) return NextResponse.json({ error: 'Yanıt bulunamadı.' }, { status: 404 })
+  const { data: postData } = await supabase.from('posts').select('author_id, is_deleted').eq('id', post_id).single()
+  const post = postData as Pick<Post, 'author_id' | 'is_deleted'> | null
+  if (!post || post.is_deleted) return NextResponse.json({ error: 'Yanıt bulunamadı.' }, { status: 404 })
 
-  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const profile = profileData as Pick<Profile, 'role'> | null
+  const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role' | 'status'> | null
+  if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   if (post.author_id !== user.id && profile?.role !== 'admin') {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
   const service = createServiceClient()
+
+  // Empty text is fine for photo/GIF-only replies, otherwise it would leave a blank post
+  if (!content.trim()) {
+    const { count } = await service.from('images').select('*', { count: 'exact', head: true }).eq('post_id', post_id)
+    if (!count) return NextResponse.json({ error: 'Yanıt boş olamaz.' }, { status: 400 })
+  }
+
   const { error } = await service.from('posts').update({ content: content.trim(), updated_at: new Date().toISOString() }).eq('id', post_id)
   if (error) return NextResponse.json({ error: 'Güncelleme başarısız.' }, { status: 500 })
   return NextResponse.json({ success: true })

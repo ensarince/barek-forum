@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
     if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
       return NextResponse.json({ error: 'Kullanıcı adı 3-30 karakter olmalı ve sadece harf, rakam, alt çizgi içerebilir.' }, { status: 400 })
     }
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json({ error: 'Şifre en az 8 karakter olmalı.' }, { status: 400 })
+    }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -30,11 +33,13 @@ export async function POST(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // Check username not already taken
+    // Check username not already taken — case-insensitive so "Ensar" can't impersonate "ensar"
+    // (escape "_", it's a wildcard in ilike)
     const { data: existing } = await admin
       .from('profiles')
       .select('id')
-      .eq('username', username)
+      .ilike('username', username.replace(/_/g, '\\_'))
+      .limit(1)
       .maybeSingle()
 
     if (existing) {

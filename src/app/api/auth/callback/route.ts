@@ -5,7 +5,9 @@ import type { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  // Only same-site paths — "//evil.com", "@evil.com" or ".evil.com" would redirect off-site
+  const rawNext = searchParams.get('next') ?? '/'
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.startsWith('/\\') ? rawNext : '/'
 
   // Create the redirect response FIRST so we can attach session cookies to it.
   // If we set cookies via cookies() store then return a new redirect response,

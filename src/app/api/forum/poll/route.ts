@@ -40,15 +40,16 @@ export async function POST(request: NextRequest) {
     resolvedTopicId = (postRow as { topic_id: string } | null)?.topic_id ?? null
   }
 
-  if (resolvedTopicId) {
-    const { data: topicRow } = await supabase
-      .from('topics')
-      .select('status')
-      .eq('id', resolvedTopicId)
-      .single()
-    if (!topicRow || (topicRow as { status: string }).status !== 'approved') {
-      return NextResponse.json({ error: 'Konu onaylı değil.' }, { status: 403 })
-    }
+  // No resolvable topic (post hidden/deleted) → no vote
+  if (!resolvedTopicId) return NextResponse.json({ error: 'Konu onaylı değil.' }, { status: 403 })
+
+  const { data: topicRow } = await supabase
+    .from('topics')
+    .select('status')
+    .eq('id', resolvedTopicId)
+    .single()
+  if (!topicRow || (topicRow as { status: string }).status !== 'approved') {
+    return NextResponse.json({ error: 'Konu onaylı değil.' }, { status: 403 })
   }
 
   const { error } = await supabase

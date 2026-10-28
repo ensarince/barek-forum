@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ users: [] })
 
+  const { data: me } = await supabase.from('profiles').select('status').eq('id', user.id).single()
+  if ((me as { status: string } | null)?.status !== 'approved') return NextResponse.json({ users: [] })
+
   let query = supabase
     .from('profiles')
     .select('username, avatar_url')
