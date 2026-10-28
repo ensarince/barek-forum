@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: 30 uploads per user per hour
-  if (!rateLimit(`upload:${user.id}`, 30, 60 * 60 * 1000)) {
+  if (!await rateLimit(`upload:${user.id}`, 30, 60 * 60 * 1000)) {
     return NextResponse.json({ error: 'Çok sık yükleme yapıyorsun, lütfen bekle.' }, { status: 429 })
   }
 

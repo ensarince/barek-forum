@@ -1,10 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Yetkisiz.' }, { status: 401 })
+
+  // 5 attempts per 15 min — stops guessing the current password
+  if (!await rateLimit(`password:${user.id}`, 5, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Çok fazla deneme. 15 dakika sonra tekrar dene.' }, { status: 429 })
+  }
 
   const body = await request.json() as {
     current_password?: string

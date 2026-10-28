@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 
     // Rate limit: 10 attempts per email per 15 minutes
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-    if (!rateLimit(`login:${email}:${ip}`, 10, 15 * 60 * 1000)) {
+    if (!await rateLimit(`login:${email}:${ip}`, 10, 15 * 60 * 1000)) {
       return NextResponse.json({ error: 'Çok fazla deneme. 15 dakika sonra tekrar dene.' }, { status: 429 })
     }
 

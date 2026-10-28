@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rateLimit'
 
 const ALLOWED_EMOJIS = new Set(['❤️', '👍', '🔥', '💪', '😂', '👀', '😮', '🎯'])
 
@@ -11,6 +12,10 @@ export async function POST(request: NextRequest) {
   const { data: profileData } = await supabase.from('profiles').select('status').eq('id', user.id).single()
   if (!profileData || (profileData as { status: string }).status !== 'approved') {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  }
+
+  if (!await rateLimit(`reaction:${user.id}`, 120, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Çok hızlı, biraz bekle.' }, { status: 429 })
   }
 
   const { emoji, topic_id, post_id } = await request.json() as {
@@ -41,15 +46,17 @@ export async function POST(request: NextRequest) {
   const { data: existing } = await checkQuery.maybeSingle()
 
   if (existing) {
-    await supabase.from('reactions').delete().eq('id', existing.id)
+    const { error } = await supabase.from('reactions').delete().eq('id', existing.id)
+    if (error) return NextResponse.json({ error: 'Kaydedilemedi.' }, { status: 500 })
     return NextResponse.json({ reacted: false })
   }
 
-  await supabase.from('reactions').insert({
+  const { error } = await supabase.from('reactions').insert({
     user_id: user.id,
     emoji,
     topic_id: topic_id ?? null,
     post_id: post_id ?? null,
   })
+  if (error) return NextResponse.json({ error: 'Kaydedilemedi.' }, { status: 500 })
   return NextResponse.json({ reacted: true })
 }

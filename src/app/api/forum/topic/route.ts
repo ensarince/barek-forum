@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
 import { emailAdminsNewTopic, emailAllUsersAnnouncement, emailUserMentioned } from '@/lib/email'
 import { isAllowedImage } from '@/lib/images'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -21,6 +22,10 @@ export async function POST(request: NextRequest) {
   const profile = profileData as Pick<Profile, 'status' | 'role' | 'username'> | null
   if (!profile || profile.status !== 'approved') {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  }
+
+  if (!await rateLimit(`topic:${user.id}`, 10, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Çok fazla konu açtın, biraz bekle.' }, { status: 429 })
   }
 
   const body = await request.json() as { title?: string; content?: string; sector_id?: string; tag?: string; type?: string; with_poll?: boolean; images?: { url: string; publicId: string }[] }

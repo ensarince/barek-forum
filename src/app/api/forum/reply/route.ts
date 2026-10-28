@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
 import { emailUserNewReply, emailUserMentioned } from '@/lib/email'
 import { isAllowedImage } from '@/lib/images'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -17,6 +18,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
   }
   const currentUsername = (profileData as { username: string }).username
+
+  // Each reply can trigger several notification emails — cap the rate per user
+  if (!await rateLimit(`reply:${user.id}`, 30, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Çok hızlı yanıt veriyorsun, biraz bekle.' }, { status: 429 })
+  }
 
   const body = await request.json() as {
     topic_id?: string

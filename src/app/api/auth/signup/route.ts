@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
     // Rate limit: 3 signups per IP per hour
-    if (!rateLimit(`signup:${ip}`, 3, 60 * 60 * 1000)) {
+    if (!await rateLimit(`signup:${ip}`, 3, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Çok fazla kayıt denemesi. Lütfen daha sonra tekrar dene.' }, { status: 429 })
     }
 

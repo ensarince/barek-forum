@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { GRADES } from '@/lib/grades'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -11,6 +12,10 @@ export async function POST(request: NextRequest) {
   const { data: profileData } = await supabase.from('profiles').select('status').eq('id', user.id).single()
   if (!profileData || (profileData as { status: string }).status !== 'approved') {
     return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  }
+
+  if (!await rateLimit(`poll:${user.id}`, 60, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Çok hızlı, biraz bekle.' }, { status: 429 })
   }
 
   const body = await request.json() as { poll_id?: string; grade?: string }

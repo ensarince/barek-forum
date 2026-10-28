@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     // Rate limit: 3 reset emails per email address per hour
     // Still return success so we don't reveal whether the limit was hit
-    if (!rateLimit(`forgot-password:${email.trim().toLowerCase()}`, 3, 60 * 60 * 1000)) {
+    if (!await rateLimit(`forgot-password:${email.trim().toLowerCase()}`, 3, 60 * 60 * 1000)) {
       return NextResponse.json({ success: true })
     }
 

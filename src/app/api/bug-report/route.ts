@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limit: 5 reports per user per hour
-    if (!rateLimit(`bug-report:${user.id}`, 5, 60 * 60 * 1000)) {
+    if (!await rateLimit(`bug-report:${user.id}`, 5, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Çok sık rapor gönderiyorsun, lütfen bekle.' }, { status: 429 })
     }
 
