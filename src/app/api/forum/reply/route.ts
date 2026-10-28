@@ -59,6 +59,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
   }
 
+  // Cross-topic reply guard: parent post must belong to the same topic (checked before saving)
+  let parentAuthorId: string | null = null
+  if (parent_post_id) {
+    const { data: parentData } = await supabase
+      .from('posts')
+      .select('author_id, topic_id')
+      .eq('id', parent_post_id)
+      .single()
+
+    if (!parentData || (parentData as { topic_id: string }).topic_id !== topic_id) {
+      return NextResponse.json({ error: 'Geçersiz parent_post_id.' }, { status: 400 })
+    }
+    parentAuthorId = (parentData as { author_id: string }).author_id
+  }
+
   const { data: postData, error: postError } = await supabase
     .from('posts')
     .insert({
@@ -130,28 +145,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify parent post author when this is a direct reply to their post
-  let parentAuthorId: string | null = null
-  if (parent_post_id) {
-    const { data: parentData } = await supabase
-      .from('posts')
-      .select('author_id, topic_id')
-      .eq('id', parent_post_id)
-      .single()
-
-    // Cross-topic reply guard: parent post must belong to the same topic
-    if (!parentData || (parentData as { topic_id: string }).topic_id !== topic_id) {
-      return NextResponse.json({ error: 'Geçersiz parent_post_id.' }, { status: 400 })
-    }
-
-    parentAuthorId = (parentData as { author_id: string }).author_id
-    if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
-      await service.from('notifications').insert({
-        user_id: parentAuthorId,
-        type: 'reply_to_post',
-        reference_id: topic_id,
-        is_read: false,
-      })
-    }
+  if (parentAuthorId && parentAuthorId !== user.id && parentAuthorId !== topic.author_id) {
+    await service.from('notifications').insert({
+      user_id: parentAuthorId,
+      type: 'reply_to_post',
+      reference_id: topic_id,
+      is_read: false,
+    })
   }
 
   // Notify @mentioned users
@@ -256,5 +256,5 @@ export async function DELETE(request: NextRequest) {
 
   // Deleting a reply never deletes the topic — the opening post lives on the topic row,
   // so the topic is only removed via the topic DELETE route (author/admin)
-  return NextResponse.json({ success: true, topicDeleted: false })
+  return NextResponse.json({ success: true })
 }

@@ -47,7 +47,8 @@ export default async function ProfilePage({ params }: PageProps) {
 
   const { data: postsData } = await supabase
     .from('posts')
-    .select('id, topic_id, content, created_at')
+    // Inner join so replies in deleted/hidden topics (filtered by topics RLS) don't show up
+    .select('id, topic_id, content, created_at, topic:topics!posts_topic_id_fkey!inner(id)')
     .eq('author_id', profile.id)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })

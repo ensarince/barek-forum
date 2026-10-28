@@ -16,10 +16,14 @@ export async function DELETE(request: NextRequest) {
     const { topicId } = await request.json() as { topicId: string }
     if (!topicId) return NextResponse.json({ error: 'Missing topicId' }, { status: 400 })
 
+    // Soft delete — the topic and its replies stay in the database and can be restored
     const service = createServiceClient()
-    await service.from('posts').delete().eq('topic_id', topicId)
+    const { error } = await service
+      .from('topics')
+      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+      .eq('id', topicId)
+    if (error) return NextResponse.json({ error: 'Server error' }, { status: 500 })
     await service.from('notifications').delete().eq('reference_id', topicId)
-    await service.from('topics').delete().eq('id', topicId)
 
     return NextResponse.json({ success: true })
   } catch {

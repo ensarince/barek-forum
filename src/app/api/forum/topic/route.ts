@@ -221,13 +221,32 @@ export async function DELETE(request: NextRequest) {
 
   const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   const profile = profileData as Pick<Profile, 'role'> | null
-  if (topic.author_id !== user.id && profile?.role !== 'admin') {
+  const isAdmin = profile?.role === 'admin'
+  if (topic.author_id !== user.id && !isAdmin) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
   const service = createServiceClient()
-  await service.from('posts').delete().eq('topic_id', topic_id)
+
+  // Authors can't delete a topic once others have replied — that would hide their replies too
+  if (!isAdmin) {
+    const { count } = await service
+      .from('posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('topic_id', topic_id)
+      .eq('is_deleted', false)
+      .neq('author_id', user.id)
+    if ((count ?? 0) > 0) {
+      return NextResponse.json({ error: 'Başkaları yanıt verdiği için bu konuyu silemezsin. Bir admin ile iletişime geç.' }, { status: 403 })
+    }
+  }
+
+  // Soft delete — the topic and its replies stay in the database and can be restored
+  const { error } = await service
+    .from('topics')
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .eq('id', topic_id)
+  if (error) return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
   await service.from('notifications').delete().eq('reference_id', topic_id)
-  await service.from('topics').delete().eq('id', topic_id)
   return NextResponse.json({ success: true })
 }

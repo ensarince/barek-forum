@@ -45,6 +45,8 @@ export interface Topic {
   type: TopicType
   status: TopicStatus
   is_pinned: boolean
+  is_deleted: boolean
+  deleted_at: string | null
   approved_by: string | null
   approved_at: string | null
   created_at: string

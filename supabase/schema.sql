@@ -65,6 +65,8 @@ create table topics (
   type topic_type not null default 'discussion',
   status topic_status not null default 'pending',
   is_pinned boolean not null default false,
+  is_deleted boolean not null default false,
+  deleted_at timestamptz,
   approved_by uuid references profiles(id),
   approved_at timestamptz,
   created_at timestamptz not null default now(),
@@ -175,6 +177,10 @@ create policy "topics_select_approved" on topics for select
     or author_id = auth.uid()
     or (select role from profiles where id = auth.uid()) = 'admin'
   );
+
+-- Deleted topics are hidden from everyone (restrictive = ANDed with the policy above)
+create policy "topics_hide_deleted" on topics as restrictive for select
+  using (is_deleted = false);
 
 create policy "topics_insert" on topics for insert
   with check ((select status from profiles where id = auth.uid()) = 'approved');

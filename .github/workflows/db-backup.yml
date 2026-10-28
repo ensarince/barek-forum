@@ -1,0 +1,41 @@
+# Nightly Supabase backup.
+# Needs two repo secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL     — Session pooler connection string (Supabase → Connect → Session pooler),
+#                         the direct connection is IPv6-only and doesn't work from GitHub runners
+#   BACKUP_PASSPHRASE   — any long random string, needed to decrypt the dump later
+#
+# Download: Actions → DB backup → pick a run → Artifacts.
+# Decrypt:  gpg --batch --passphrase "<BACKUP_PASSPHRASE>" -d backup.sql.gz.gpg | gunzip > backup.sql
+name: DB backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pg_dump 17
+        run: |
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -o pipefail
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
+            --schema=public --schema=auth --no-owner --no-privileges \
+            | gzip \
+            | gpg --batch --symmetric --cipher-algo AES256 --passphrase "$BACKUP_PASSPHRASE" -o backup.sql.gz.gpg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.sql.gz.gpg
+          retention-days: 30

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil, Trash2, User, X } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from '@/lib/utils'
 import ReplyForm from './ReplyForm'
@@ -45,7 +44,6 @@ export default function PostsList({
   const [postPolls, setPostPolls] = useState<Record<string, PostPollData>>(initialPostPolls)
   const [postReactions] = useState<Record<string, ReactionGroup[]>>(initialPostReactions)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
-  const router = useRouter()
 
   function updatePostContent(postId: string, newContent: string) {
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, content: newContent } : p))
@@ -53,10 +51,6 @@ export default function PostsList({
 
   function removePost(postId: string) {
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, is_deleted: true, content: '' } : p))
-  }
-
-  function handleTopicDeleted() {
-    router.push('/')
   }
 
   function addPost(newPost: PostWithAuthor, newImages: ImageRow[] = [], poll?: Poll | null) {
@@ -156,7 +150,6 @@ export default function PostsList({
                     isReplying={replyingTo === post.id}
                     onEdit={updatePostContent}
                     onDelete={removePost}
-                    onTopicDeleted={handleTopicDeleted}
                   />
 
                   {replyingTo === post.id && (
@@ -189,7 +182,6 @@ export default function PostsList({
                             isReplying={replyingTo === reply.id}
                             onEdit={updatePostContent}
                             onDelete={removePost}
-                            onTopicDeleted={handleTopicDeleted}
                             nested
                           />
                           {replyingTo === reply.id && (
@@ -241,7 +233,6 @@ function PostCard({
   isReplying,
   onEdit,
   onDelete,
-  onTopicDeleted,
   nested = false,
 }: {
   post: PostWithAuthor
@@ -254,7 +245,6 @@ function PostCard({
   isReplying: boolean
   onEdit: (postId: string, newContent: string) => void
   onDelete: (postId: string) => void
-  onTopicDeleted: () => void
   nested?: boolean
 }) {
   const [editing, setEditing] = useState(false)
@@ -299,11 +289,7 @@ function PostCard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: post.id }),
       })
-      if (res.ok) {
-        const data = await res.json() as { topicDeleted?: boolean }
-        onDelete(post.id)
-        if (data.topicDeleted) onTopicDeleted()
-      }
+      if (res.ok) onDelete(post.id)
     } finally {
       setDeleteLoading(false)
       setDeleteConfirm(false)

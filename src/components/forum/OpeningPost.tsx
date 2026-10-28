@@ -26,6 +26,7 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
   const [editLoading, setEditLoading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const isOwn = topic.author_id === currentUserId
 
@@ -49,13 +50,21 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
 
   async function deleteTopic() {
     setDeleteLoading(true)
+    setDeleteError(null)
     try {
       const res = await fetch('/api/forum/topic', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic_id: topic.id }),
       })
-      if (res.ok) router.push('/')
+      if (res.ok) {
+        router.push('/')
+      } else {
+        const data = await res.json() as { error?: string }
+        setDeleteError(data.error ?? 'Silme başarısız.')
+      }
+    } catch {
+      setDeleteError('Sunucuya bağlanılamadı.')
     } finally {
       setDeleteLoading(false)
       setDeleteConfirm(false)
@@ -106,6 +115,7 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
           </div>
         )}
       </div>
+      {deleteError && <p className="text-[#c0392b] text-xs mt-2">{deleteError}</p>}
 
       {editing ? (
         <div className="mt-3">
