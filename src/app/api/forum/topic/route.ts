@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
   // Validate Giphy URLs — publicId must match an actual Giphy CDN URL
   const validatedImages = (images ?? []).filter((img) => {
     if (img.publicId?.startsWith('giphy_')) {
-      return /^https:\/\/media\.giphy\.com\//.test(img.url)
+      return /^https:\/\/media\d?\.giphy\.com\//.test(img.url)
     }
     return true
   })

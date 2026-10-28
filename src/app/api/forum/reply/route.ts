@@ -26,8 +26,16 @@ export async function POST(request: NextRequest) {
   }
   const { topic_id, content, parent_post_id = null, images, with_poll } = body
 
-  const hasImages = images && images.length > 0
-  if (!hasImages && (!content || !content.trim())) {
+  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL (media.giphy.com or media0-4.giphy.com)
+  const validatedImages = (images ?? []).filter((img) => {
+    if (img.publicId?.startsWith('giphy_')) {
+      return /^https:\/\/media\d?\.giphy\.com\//.test(img.url)
+    }
+    return true
+  })
+
+  // Check after validation so a reply whose only GIF got rejected isn't saved empty
+  if (validatedImages.length === 0 && (!content || !content.trim())) {
     return NextResponse.json({ error: 'Yanıt boş olamaz.' }, { status: 400 })
   }
   if (content && content.length > 20000) {
@@ -68,14 +76,6 @@ export async function POST(request: NextRequest) {
   }
 
   const post = postData as Post
-
-  // Validate Giphy URLs — publicId must match an actual Giphy CDN URL
-  const validatedImages = (images ?? []).filter((img) => {
-    if (img.publicId?.startsWith('giphy_')) {
-      return /^https:\/\/media\.giphy\.com\//.test(img.url)
-    }
-    return true
-  })
 
   // Insert image records
   let savedImages: ImageRow[] = []
@@ -254,18 +254,7 @@ export async function DELETE(request: NextRequest) {
   const { error } = await service.from('posts').update({ is_deleted: true }).eq('id', post_id)
   if (error) return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
 
-  // If no remaining posts in this topic, delete the topic too
-  const { count } = await service
-    .from('posts')
-    .select('*', { count: 'exact', head: true })
-    .eq('topic_id', post.topic_id)
-    .eq('is_deleted', false)
-
-  if (count === 0) {
-    await service.from('notifications').delete().eq('reference_id', post.topic_id)
-    await service.from('topics').delete().eq('id', post.topic_id)
-    return NextResponse.json({ success: true, topicDeleted: true })
-  }
-
+  // Deleting a reply never deletes the topic — the opening post lives on the topic row,
+  // so the topic is only removed via the topic DELETE route (author/admin)
   return NextResponse.json({ success: true, topicDeleted: false })
 }
