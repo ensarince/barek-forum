@@ -3,34 +3,33 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { MessageSquare, Pin } from 'lucide-react'
 import RefreshButton from '@/components/forum/RefreshButton'
+import { redirect } from 'next/navigation'
+import Pagination from '@/components/forum/Pagination'
 import { getReplyCounts } from '@/lib/counts'
-import type { TopicWithMeta, TopicRead } from '@/types/database'
+import { getTopicsPage, parsePage } from '@/lib/topicPages'
+import type { TopicRead } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
   process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_project_url'
 
-export default async function FeedPage() {
+interface PageProps {
+  searchParams: Promise<{ sayfa?: string | string[] }>
+}
+
+export default async function FeedPage({ searchParams }: PageProps) {
   if (!SUPABASE_CONFIGURED) {
     return <PreviewFeed />
   }
 
+  const page = parsePage((await searchParams).sayfa)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: topicsRaw } = await supabase
-    .from('topics')
-    .select(`
-      *,
-      author:profiles!topics_author_id_fkey(username, avatar_url),
-      sector:sectors(name)
-    `)
-    .eq('status', 'approved')
-    .order('is_pinned', { ascending: false })
-    .order('updated_at', { ascending: false })
-    .limit(50)
+  const { topics, totalPages } = await getTopicsPage(supabase, { page })
+  // e.g. ?sayfa=99 after topics were deleted — go to the last real page
+  if (page > totalPages) redirect(totalPages > 1 ? `/?sayfa=${totalPages}` : '/')
 
-  const topics = (topicsRaw ?? []) as TopicWithMeta[]
   const topicIds = topics.map((t) => t.id)
   const safeIds = topicIds.length > 0 ? topicIds : ['_none']
 
@@ -121,6 +120,8 @@ export default async function FeedPage() {
           <p className="text-[#8a8a8a] text-sm py-8 text-center">Henüz konu yok.</p>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} basePath="/" />
     </div>
   )
 }

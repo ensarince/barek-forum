@@ -1,11 +1,13 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import Pagination from '@/components/forum/Pagination'
+import { getTopicsPage, parsePage } from '@/lib/topicPages'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import { ArrowLeft, MessageSquare } from 'lucide-react'
 import RefreshButton from '@/components/forum/RefreshButton'
 import { getReplyCounts } from '@/lib/counts'
-import type { TopicWithMeta, Sector, TopicRead } from '@/types/database'
+import type { Sector, TopicRead } from '@/types/database'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -13,10 +15,12 @@ const SUPABASE_CONFIGURED =
 
 interface PageProps {
   params: Promise<{ sectorId: string }>
+  searchParams: Promise<{ sayfa?: string | string[] }>
 }
 
-export default async function SectorPage({ params }: PageProps) {
+export default async function SectorPage({ params, searchParams }: PageProps) {
   const { sectorId } = await params
+  const page = parsePage((await searchParams).sayfa)
 
   if (!SUPABASE_CONFIGURED) {
     return <PreviewSector />
@@ -34,20 +38,11 @@ export default async function SectorPage({ params }: PageProps) {
   if (!sectorData) notFound()
   const sector = sectorData as Sector
 
-  const { data: topicsRaw } = await supabase
-    .from('topics')
-    .select(`
-      *,
-      author:profiles!topics_author_id_fkey(username, avatar_url),
-      sector:sectors(name)
-    `)
-    .eq('status', 'approved')
-    .eq('sector_id', sectorId)
-    .order('is_pinned', { ascending: false })
-    .order('updated_at', { ascending: false })
-    .limit(50)
+  const basePath = `/sectors/${sectorId}`
+  const { topics, totalPages } = await getTopicsPage(supabase, { page, sectorId })
+  // e.g. ?sayfa=99 after topics were deleted — go to the last real page
+  if (page > totalPages) redirect(totalPages > 1 ? `${basePath}?sayfa=${totalPages}` : basePath)
 
-  const topics = (topicsRaw ?? []) as TopicWithMeta[]
   const topicIds = topics.map((t) => t.id)
   const safeIds = topicIds.length > 0 ? topicIds : ['_none']
 
@@ -121,6 +116,8 @@ export default async function SectorPage({ params }: PageProps) {
           <p className="text-[#8a8a8a] text-sm py-8 text-center">Bu sektörde henüz konu yok.</p>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} basePath={basePath} />
     </div>
   )
 }
