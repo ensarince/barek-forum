@@ -12,6 +12,9 @@ revoke select on public.profiles from anon;
 
 grant select (id, username, avatar_url, status) on public.profiles to anon;
 
+-- topics_select checks the caller's role in a subquery, so anon needs this column too (only "user"/"admin")
+grant select (role) on public.profiles to anon;
+
 create policy "guests_read_reactions" on public.reactions for select to anon using (true);
 
 create policy "guests_read_polls" on public.polls for select to anon using (true);
