@@ -135,5 +135,8 @@ export async function proxy(request: NextRequest) {
 export default proxy
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public|api).*)'],
+  // Static files from public/ (banner /bg/*.jpeg, /icon.png, ...) must skip the auth gate,
+  // otherwise guests — and the image optimizer, which fetches them without cookies — get
+  // redirected to /login instead of the file.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:png|jpe?g|gif|webp|avif|svg|ico|txt|xml|webmanifest)$).*)'],
 }
