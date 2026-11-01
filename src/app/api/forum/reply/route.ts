@@ -287,6 +287,19 @@ export async function DELETE(request: NextRequest) {
   if (error) return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
   await service.from('images').delete().eq('post_id', post_id)
 
+  // A reply bumped the topic to the top of the feed (updated_at). Undo that: last activity is now
+  // the newest remaining reply, or the topic's own creation if none are left.
+  const [{ data: lastLive }, { data: topicRow }] = await Promise.all([
+    service.from('posts').select('created_at').eq('topic_id', post.topic_id).eq('is_deleted', false)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    service.from('topics').select('created_at').eq('id', post.topic_id).single(),
+  ])
+  const lastActivity = (lastLive as { created_at: string } | null)?.created_at
+    ?? (topicRow as { created_at: string } | null)?.created_at
+  if (lastActivity) {
+    await service.from('topics').update({ updated_at: lastActivity }).eq('id', post.topic_id)
+  }
+
   // Deleting a reply never deletes the topic — the opening post lives on the topic row,
   // so the topic is only removed via the topic DELETE route (author/admin)
   return NextResponse.json({ success: true })
