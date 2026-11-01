@@ -73,7 +73,10 @@ export async function proxy(request: NextRequest) {
   try {
     const { data, error } = await supabase.auth.getUser()
     user = data.user
-    if (error) lookupFailed = true
+    // Only a dropped connection / Supabase outage counts as "failed". A missing session or a
+    // rejected token (4xx, AuthSessionMissingError) means "not logged in" — otherwise any junk
+    // sb-*-auth-token cookie would wave a guest past the gate.
+    if (error) lookupFailed = error.name === 'AuthRetryableFetchError' || (error.status ?? 0) >= 500
   } catch {
     lookupFailed = true
   }

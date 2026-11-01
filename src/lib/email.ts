@@ -1,9 +1,16 @@
 import { Resend } from 'resend'
 import { createServiceClient } from './supabase/server'
+import { rateLimit } from './rateLimit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.EMAIL_FROM ?? 'Barek Forum <noreply@barekforum.com>'
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+
+// Per-recipient cap for activity emails (replies + mentions), so nobody can flood one person's
+// inbox or burn the Resend quota. In-app notifications still arrive; only the email is skipped.
+async function activityEmailAllowed(userId: string) {
+  return rateLimit(`mail:${userId}`, 10, 60 * 60 * 1000)
+}
 
 // ─── HTML helpers ─────────────────────────────────────────────────────────────
 
@@ -182,6 +189,7 @@ export async function emailUserTopicRejected(userId: string, username: string, t
 
 /** User: someone replied to their topic */
 export async function emailUserNewReply(userId: string, username: string, replierUsername: string, topicTitle: string, topicId: string) {
+  if (!await activityEmailAllowed(userId)) return
   const email = await getUserEmail(userId)
   if (!email) return
   const u = escapeHtml(username)
@@ -197,6 +205,7 @@ export async function emailUserNewReply(userId: string, username: string, replie
 
 /** User: they were @mentioned in a post */
 export async function emailUserMentioned(userId: string, username: string, mentionerUsername: string, topicTitle: string, topicId: string) {
+  if (!await activityEmailAllowed(userId)) return
   const email = await getUserEmail(userId)
   if (!email) return
   const u = escapeHtml(username)

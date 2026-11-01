@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Topic } from '@/types/database'
 import { emailUserTopicApproved, emailUserTopicRejected } from '@/lib/email'
@@ -10,9 +11,9 @@ export async function DELETE(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: callerData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const { data: callerData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
     const caller = callerData as Pick<Profile, 'role'> | null
-    if (!caller || caller.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!isActiveAdmin(caller)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { topicId } = await request.json() as { topicId: string }
     if (!topicId) return NextResponse.json({ error: 'Missing topicId' }, { status: 400 })
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: callerData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const { data: callerData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
     const caller = callerData as Pick<Profile, 'role'> | null
-    if (!caller || caller.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!isActiveAdmin(caller)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await request.json() as { topicId: string; action: 'approve' | 'reject' }
     const { topicId, action } = body

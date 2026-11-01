@@ -7,6 +7,20 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import logoSrc from '@/assets/barek-logo.png'
 
+// Supabase records how a session was created in the JWT's `amr` claim. A reset link gives
+// method "recovery" (some versions "otp"); accept it only within 30 minutes of the click.
+function isFreshRecoverySession(accessToken: string): boolean {
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as {
+      amr?: { method: string; timestamp: number }[]
+    }
+    const now = Date.now() / 1000
+    return (payload.amr ?? []).some((a) => (a.method === 'recovery' || a.method === 'otp') && now - a.timestamp < 30 * 60)
+  } catch {
+    return false
+  }
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter()
   const [password, setPassword] = useState('')
@@ -36,10 +50,14 @@ export default function ResetPasswordPage() {
           }
         })
     } else {
-      // PKCE flow: session already set by callback route
+      // PKCE flow: session already set by callback route. Only accept it if it really came from
+      // a reset link — otherwise anyone holding an unlocked, logged-in phone could set a new
+      // password here without knowing the old one (Ayarlar asks for the current password).
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
+        if (session && isFreshRecoverySession(session.access_token)) {
           setReady(true)
+        } else if (session) {
+          setError('Şifreni değiştirmek için Ayarlar sayfasını kullan.')
         } else {
           setError('Bu bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama bağlantısı talep et.')
         }

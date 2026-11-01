@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { requireAdminPage } from '@/lib/adminAuth'
 import BugReportActions from '@/components/admin/BugReportActions'
 
 type BugReport = {
@@ -23,11 +23,7 @@ function formatDate(iso: string) {
 
 export default async function BugReportsPage() {
   // Re-check admin here — layouts don't re-run on every navigation, and the service client bypasses RLS
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
-  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if ((me as { role: string } | null)?.role !== 'admin') notFound()
+  await requireAdminPage()
 
   const service = createServiceClient()
   const { data } = await service

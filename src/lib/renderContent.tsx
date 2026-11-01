@@ -1,19 +1,28 @@
 import React from 'react'
 import Link from 'next/link'
 
-// Matches URLs and @mentions as tokens to split on
-const TOKEN_RE = /(https?:\/\/[^\s<>"{}|\\^`[\]]+|(?<!\w)@[a-zA-Z0-9_]+)/g
+// Matches URLs (capped at 2048 chars) and @mentions as tokens to split on
+const TOKEN_RE = /(https?:\/\/[^\s<>"{}|\\^`[\]]{1,2048}|(?<!\w)@[a-zA-Z0-9_]+)/g
 
-// Strip trailing punctuation unlikely to be part of the URL
+const TRAILING_PUNCTUATION = new Set(['.', ',', ';', ':', '!', '?', ')', "'", '"', ']', '>'])
+
+// Strip trailing punctuation unlikely to be part of the URL. A backwards loop instead of a
+// /[...]+$/ regex, which takes quadratic time on long runs of punctuation (server-side, every view).
 function cleanUrl(url: string): string {
-  return url.replace(/[.,;:!?)'"\]>]+$/, '')
+  let end = url.length
+  while (end > 0 && TRAILING_PUNCTUATION.has(url[end - 1])) end--
+  return url.slice(0, end)
 }
 
+const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com'])
+const YOUTUBE_ID_RE = /^[\w-]{11}$/
+
+// Exact hosts only ("youtube.com.evil.net" must not count) and a real 11-char video id
 function getYouTubeId(url: string): string | null {
   try {
     const u = new URL(url)
-    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null
-    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
+    const id = u.hostname === 'youtu.be' ? u.pathname.slice(1) : YOUTUBE_HOSTS.has(u.hostname) ? u.searchParams.get('v') : null
+    return id && YOUTUBE_ID_RE.test(id) ? id : null
   } catch {}
   return null
 }
@@ -64,6 +73,8 @@ export function renderContent(content: string): React.ReactNode {
         <img
           src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
           alt="YouTube video"
+          referrerPolicy="no-referrer"
+          loading="lazy"
           className="w-full block"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition-colors">

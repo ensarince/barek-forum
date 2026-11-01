@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminPage } from '@/lib/adminAuth'
 
 const SUPABASE_CONFIGURED =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
   let stats = { pendingUsers: 3, pendingTopics: 2, totalUsers: 47, totalTopics: 134 }
 
   if (SUPABASE_CONFIGURED) {
-    const supabase = await createClient()
+    const { supabase } = await requireAdminPage() // page-level admin check
 
     const [
       { count: pendingUsers },

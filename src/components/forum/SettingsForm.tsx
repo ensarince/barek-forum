@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { compressImage } from '@/lib/compressImage'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -41,10 +42,11 @@ export default function SettingsForm({ profile }: { profile: Profile }) {
     setAvatarUploading(true)
     setAvatarMsg(null)
     try {
+      // Shrink big phone photos first (Vercel rejects bodies over ~4.5 MB)
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', await compressImage(file))
       const upRes = await fetch('/api/upload', { method: 'POST', body: fd })
-      const upData = await upRes.json() as { url?: string; error?: string }
+      const upData = await upRes.json().catch(() => ({})) as { url?: string; error?: string }
       if (!upRes.ok) { setAvatarMsg({ ok: false, text: upData.error ?? 'Yükleme başarısız.' }); return }
       const saveRes = await fetch('/api/user/profile', {
         method: 'PATCH',

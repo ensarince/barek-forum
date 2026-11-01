@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminPage } from '@/lib/adminAuth'
 import StatusBadge from '@/components/admin/StatusBadge'
 import AdminAction from '@/components/admin/AdminAction'
 import { formatDistanceToNow } from '@/lib/utils'
@@ -55,7 +55,7 @@ export default async function AdminTopicsPage() {
   let topics: TopicWithMeta[] = PREVIEW_TOPICS
 
   if (SUPABASE_CONFIGURED) {
-    const supabase = await createClient()
+    const { supabase } = await requireAdminPage() // page-level admin check
     const { data } = await supabase
       .from('topics')
       .select('*, author:profiles!topics_author_id_fkey(username, avatar_url), sector:sectors(name)')

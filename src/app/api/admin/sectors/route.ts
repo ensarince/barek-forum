@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile, Sector } from '@/types/database'
 
@@ -6,9 +7,9 @@ async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized', status: 401, supabase: null }
-  const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const { data } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
   const profile = data as Pick<Profile, 'role'> | null
-  if (!profile || profile.role !== 'admin') return { error: 'Forbidden', status: 403, supabase: null }
+  if (!isActiveAdmin(profile)) return { error: 'Forbidden', status: 403, supabase: null }
   return { error: null, status: 200, supabase }
 }
 

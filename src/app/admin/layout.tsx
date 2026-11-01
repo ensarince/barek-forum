@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile } from '@/types/database'
@@ -24,9 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const { data } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
     const profile = data as Pick<Profile, 'role'> | null
-    if (!profile || profile.role !== 'admin') redirect('/')
+    if (!isActiveAdmin(profile)) redirect('/')
   }
 
   return (

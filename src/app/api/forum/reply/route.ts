@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Topic, Post, Image as ImageRow, Poll, Profile } from '@/types/database'
 import { emailUserNewReply, emailUserMentioned } from '@/lib/email'
@@ -126,11 +127,18 @@ export async function POST(request: NextRequest) {
   // Create poll attached to this post if requested
   let savedPoll: Poll | null = null
   if (with_poll) {
-    const { data: pollData } = await supabase
+    const { data: pollData, error: pollError } = await supabase
       .from('polls')
       .insert({ post_id: post.id, question: 'Bu rotanın derecesi nedir?' })
       .select()
       .single()
+    // Same rollback as images: no half-created reply
+    if (pollError) {
+      const service = createServiceClient()
+      await service.from('images').delete().eq('post_id', post.id)
+      await service.from('posts').delete().eq('id', post.id)
+      return NextResponse.json({ error: 'Anket oluşturulamadı, tekrar dene.' }, { status: 500 })
+    }
     savedPoll = pollData as Poll | null
   }
 
@@ -236,7 +244,7 @@ export async function PATCH(request: NextRequest) {
   const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
   const profile = profileData as Pick<Profile, 'role' | 'status'> | null
   if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
-  if (post.author_id !== user.id && profile?.role !== 'admin') {
+  if (post.author_id !== user.id && !isActiveAdmin(profile)) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
@@ -265,15 +273,19 @@ export async function DELETE(request: NextRequest) {
   const post = postData as Pick<Post, 'author_id' | 'topic_id'> | null
   if (!post) return NextResponse.json({ error: 'Yanıt bulunamadı.' }, { status: 404 })
 
-  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const profile = profileData as Pick<Profile, 'role'> | null
-  if (post.author_id !== user.id && profile?.role !== 'admin') {
+  const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role' | 'status'> | null
+  if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  if (post.author_id !== user.id && !isActiveAdmin(profile)) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
   const service = createServiceClient()
-  const { error } = await service.from('posts').update({ is_deleted: true }).eq('id', post_id)
+  // Blank the text too — the row stays (as "[silindi]" for its replies) and is readable
+  // through the database API, so the content itself must actually be gone
+  const { error } = await service.from('posts').update({ is_deleted: true, content: '' }).eq('id', post_id)
   if (error) return NextResponse.json({ error: 'Silme başarısız.' }, { status: 500 })
+  await service.from('images').delete().eq('post_id', post_id)
 
   // Deleting a reply never deletes the topic — the opening post lives on the topic row,
   // so the topic is only removed via the topic DELETE route (author/admin)

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient } from '@/lib/supabase/server'
 import type { Profile, Page } from '@/types/database'
 
@@ -19,9 +20,9 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: callerData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const { data: callerData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
     const caller = callerData as Pick<Profile, 'role'> | null
-    if (!caller || caller.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!isActiveAdmin(caller)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await request.json() as { content: string }
     if (typeof body.content !== 'string') return NextResponse.json({ error: 'Content required' }, { status: 400 })

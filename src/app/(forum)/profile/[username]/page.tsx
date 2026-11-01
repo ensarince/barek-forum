@@ -82,7 +82,8 @@ function ProfileView({
     { label: '27crags', href: profile.topo_url },
     { label: 'Instagram', href: profile.instagram_url },
     { label: 'YouTube', href: profile.youtube_url },
-  ].filter((l) => !!l.href)
+  // Only render real https links — these columns are user-written, don't rely on React alone
+  ].filter((l) => !!l.href && /^https:\/\//i.test(l.href))
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">

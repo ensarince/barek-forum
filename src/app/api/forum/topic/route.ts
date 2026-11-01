@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
 import { emailAllUsersAnnouncement } from '@/lib/email'
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
   const isAnnouncement = type === 'announcement'
 
   // Announcements are admin-only
-  if (isAnnouncement && profile.role !== 'admin') {
+  if (isAnnouncement && !isActiveAdmin(profile)) {
     return NextResponse.json({ error: 'Sadece adminler duyuru paylaşabilir.' }, { status: 403 })
   }
 
@@ -177,7 +178,7 @@ export async function PATCH(request: NextRequest) {
   const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
   const profile = profileData as Pick<Profile, 'role' | 'status'> | null
   if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
-  if (topic.author_id !== user.id && profile?.role !== 'admin') {
+  if (topic.author_id !== user.id && !isActiveAdmin(profile)) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }
 
@@ -199,9 +200,10 @@ export async function DELETE(request: NextRequest) {
   const topic = topicData as { author_id: string } | null
   if (!topic) return NextResponse.json({ error: 'Konu bulunamadı.' }, { status: 404 })
 
-  const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  const profile = profileData as Pick<Profile, 'role'> | null
-  const isAdmin = profile?.role === 'admin'
+  const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
+  const profile = profileData as Pick<Profile, 'role' | 'status'> | null
+  if (profile?.status !== 'approved') return NextResponse.json({ error: 'Hesabın onaylı değil.' }, { status: 403 })
+  const isAdmin = isActiveAdmin(profile)
   if (topic.author_id !== user.id && !isAdmin) {
     return NextResponse.json({ error: 'Yetkisiz.' }, { status: 403 })
   }

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAdminPage } from '@/lib/adminAuth'
 import StatusBadge from '@/components/admin/StatusBadge'
 import AdminAction from '@/components/admin/AdminAction'
 import { formatDistanceToNow } from '@/lib/utils'
@@ -48,7 +48,7 @@ export default async function AdminUsersPage() {
   let users: Profile[] = PREVIEW_USERS
 
   if (SUPABASE_CONFIGURED) {
-    const supabase = await createClient()
+    const { supabase } = await requireAdminPage() // page-level admin check
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
     users = (data ?? []) as Profile[]
   }

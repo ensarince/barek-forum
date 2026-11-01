@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     post_id?: string
   }
 
-  if (!emoji || (!topic_id && !post_id)) {
+  // Exactly one target — both at once slipped past the duplicate check and inserted new rows
+  if (!emoji || (!topic_id && !post_id) || (topic_id && post_id)) {
     return NextResponse.json({ error: 'Eksik alan.' }, { status: 400 })
   }
   if (!ALLOWED_EMOJIS.has(emoji)) {

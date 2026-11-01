@@ -58,9 +58,14 @@ function LoginForm() {
         setError(json.error ?? 'Email veya şifre hatalı.')
         return
       }
-      // Back to where the proxy sent them from — same-site paths only
+      // Back to where the proxy sent them from — same-site only. Resolve it the way the browser
+      // will (it strips tabs/newlines, so "/\t/evil.com" becomes "//evil.com") and compare origins.
       const next = new URLSearchParams(window.location.search).get('next') ?? '/'
-      const target = next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/'
+      let target = '/'
+      try {
+        const resolved = new URL(next, window.location.origin)
+        if (resolved.origin === window.location.origin) target = resolved.pathname + resolved.search + resolved.hash
+      } catch { /* malformed → home */ }
       // Hard navigation so the browser sends the server-set session cookie.
       // Not a React state mutation, so the compiler's rule doesn't apply here.
       // eslint-disable-next-line react-hooks/immutability

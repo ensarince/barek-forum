@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isActiveAdmin } from '@/lib/adminAuth'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { emailAdminBugReport } from '@/lib/email'
 import { rateLimit } from '@/lib/rateLimit'
@@ -58,9 +59,9 @@ export async function PATCH(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: profileData } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const { data: profileData } = await supabase.from('profiles').select('role, status').eq('id', user.id).single()
     const profile = profileData as Pick<Profile, 'role'> | null
-    if (!profile || profile.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!isActiveAdmin(profile)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id, status } = await request.json() as { id: string; status: string }
     if (!id || !['open', 'resolved'].includes(status)) {
