@@ -9,5 +9,6 @@ export async function POST(request: NextRequest) {
   }
   const supabase = await createClient()
   await supabase.auth.signOut()
-  return NextResponse.redirect(new URL('/login', request.nextUrl.origin), { status: 302 })
+  // Home, not /login — logged-out visitors can read the forum, and the login button is right there
+  return NextResponse.redirect(new URL('/', request.nextUrl.origin), { status: 303 })
 }
