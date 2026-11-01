@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from '@/lib/utils'
 import type { Notification, NotificationType } from '@/types/database'
@@ -29,11 +30,12 @@ export default async function NotificationsPage() {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login?next=/notifications') // members only
 
   const { data: notifsRaw } = await supabase
     .from('notifications')
     .select('*')
-    .eq('user_id', user!.id)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -44,7 +46,7 @@ export default async function NotificationsPage() {
     await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('user_id', user!.id)
+      .eq('user_id', user.id)
       .eq('is_read', false)
   }
 

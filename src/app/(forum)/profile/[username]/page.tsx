@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { formatMonthYear, formatDistanceToNow } from '@/lib/utils'
@@ -20,6 +21,9 @@ export default async function ProfilePage({ params }: PageProps) {
   }
 
   const supabase = await createClient()
+  // Profiles (with personal links) are members only
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect(`/login?next=/profile/${encodeURIComponent(username)}`)
 
   const { data: profileData } = await supabase
     .from('profiles')

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import NewTopicForm from '@/components/forum/NewTopicForm'
 import type { Sector } from '@/types/database'
@@ -19,6 +20,8 @@ export default async function NewTopicPage() {
   }
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login?next=/topics/new') // members only
   const { data: sectorsData } = await supabase.from('sectors').select('*').order('order_index')
   const sectors = (sectorsData ?? []) as Sector[]
 

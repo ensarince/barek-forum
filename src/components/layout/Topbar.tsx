@@ -10,7 +10,8 @@ import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
 interface TopbarProps {
-  profile: Profile
+  /** null = guest (not logged in) */
+  profile: Profile | null
   unreadCount: number
   onMenuClick?: () => void
 }
@@ -41,18 +42,20 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
     }
   }, [menuOpen])
 
+  const profileId = profile?.id
   useEffect(() => {
+    if (!profileId) return // guests have no notifications
     const supabase = createClient()
     const channel = supabase
-      .channel(`notif:${profile.id}`)
+      .channel(`notif:${profileId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${profileId}` },
         () => setBellCount((c) => c + 1)
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [profile.id])
+  }, [profileId])
 
   function openSearch() {
     setSearchOpen(true)
@@ -123,6 +126,19 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
           </button>
         )}
 
+        {/* Guests: login / signup instead of bell + profile menu */}
+        {!profile ? (
+          !searchOpen && (
+            <div className="flex items-center gap-1.5">
+              <Link href="/login" className="bg-[#8b1a1a] hover:bg-[#a82020] text-white px-3 py-2 text-[11px] font-semibold uppercase tracking-widest transition-colors">
+                Giriş Yap
+              </Link>
+              <Link href="/signup" className="hidden sm:block border border-[#2a2a2a] text-[#c8c8c8] hover:text-white hover:border-[#8a8a8a] px-3 py-2 text-[11px] font-semibold uppercase tracking-widest transition-colors">
+                Kayıt Ol
+              </Link>
+            </div>
+          )
+        ) : (<>
         {/* Notification bell */}
         <Link
           href="/notifications"
@@ -205,6 +221,7 @@ export default function Topbar({ profile, unreadCount, onMenuClick }: TopbarProp
             </div>
           )}
         </div>
+        </>)}
       </div>
     </header>
   )

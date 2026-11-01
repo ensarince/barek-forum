@@ -18,7 +18,8 @@ const BANNERS = [
 ]
 
 interface ForumShellProps {
-  profile: Profile
+  /** null = guest (not logged in), read-only browsing */
+  profile: Profile | null
   unreadCount: number
   sectors: Sector[]
   sectorCounts: Record<string, number>
@@ -101,7 +102,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
 
       <div className="flex flex-1">
         <div className="hidden sm:flex shrink-0 sticky top-16 self-start h-[calc(100dvh-4rem)]">
-          <Sidebar sectors={sectors} sectorCounts={sectorCounts} />
+          <Sidebar sectors={sectors} sectorCounts={sectorCounts} isGuest={!profile} />
         </div>
 
         {menuOpen && (
@@ -131,6 +132,7 @@ export default function ForumShell({ profile, unreadCount, sectors, sectorCounts
               <Sidebar
                 sectors={sectors}
                 sectorCounts={sectorCounts}
+                isGuest={!profile}
                 onLinkClick={() => setMenuOpen(false)}
               />
             </div>

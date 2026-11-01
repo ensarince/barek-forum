@@ -8,9 +8,11 @@ interface PollWidgetProps {
   question: string
   initialVotes: Record<string, number>
   initialUserVote: string | null
+  /** Guests see the results but can't vote */
+  readOnly?: boolean
 }
 
-export default function PollWidget({ pollId, question, initialVotes, initialUserVote }: PollWidgetProps) {
+export default function PollWidget({ pollId, question, initialVotes, initialUserVote, readOnly = false }: PollWidgetProps) {
   const [votes, setVotes] = useState<Record<string, number>>(initialVotes)
   const [userVote, setUserVote] = useState<string | null>(initialUserVote)
   const [loading, setLoading] = useState<string | null>(null)
@@ -55,6 +57,11 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
         <span className="text-[11px] text-[#8a8a8a]">{total} oy</span>
       </div>
 
+      {readOnly ? (
+        <p className="text-[11px] text-[#8a8a8a] mb-4">
+          {total === 0 ? 'Henüz oy yok. ' : ''}Oy vermek için giriş yap.
+        </p>
+      ) : (
       <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mb-5">
         {GRADES.map((grade) => {
           const isVoted = userVote === grade
@@ -75,6 +82,7 @@ export default function PollWidget({ pollId, question, initialVotes, initialUser
           )
         })}
       </div>
+      )}
 
       {total > 0 && (
         <div className="space-y-1.5">

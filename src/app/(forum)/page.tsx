@@ -35,11 +35,14 @@ export default async function FeedPage({ searchParams }: PageProps) {
 
   const countMap = await getReplyCounts(supabase, topicIds)
 
-  const { data: readsRaw } = await supabase
-    .from('topic_reads')
-    .select('topic_id, last_read_at')
-    .eq('user_id', user!.id)
-    .in('topic_id', safeIds)
+  // Unread markers only make sense for members — guests see everything as read
+  const { data: readsRaw } = user
+    ? await supabase
+      .from('topic_reads')
+      .select('topic_id, last_read_at')
+      .eq('user_id', user.id)
+      .in('topic_id', safeIds)
+    : { data: [] }
 
   const reads = (readsRaw ?? []) as Pick<TopicRead, 'topic_id' | 'last_read_at'>[]
   const readMap = reads.reduce<Record<string, string>>((acc, r) => {
@@ -65,7 +68,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
       <div className="divide-y divide-[#2a2a2a]">
         {topics.map((topic) => {
           const lastRead = readMap[topic.id]
-          const isUnread = !lastRead || new Date(topic.updated_at) > new Date(lastRead)
+          const isUnread = !!user && (!lastRead || new Date(topic.updated_at) > new Date(lastRead))
           const replyCount = countMap[topic.id] ?? 0
 
           return (

@@ -11,9 +11,11 @@ interface SidebarProps {
   sectors: Sector[]
   sectorCounts?: Record<string, number>
   onLinkClick?: () => void
+  /** Guests can't send bug reports (the API needs a login) */
+  isGuest?: boolean
 }
 
-export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: SidebarProps) {
+export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick, isGuest = false }: SidebarProps) {
   const pathname = usePathname()
   const [bugReportOpen, setBugReportOpen] = useState(false)
 
@@ -53,13 +55,13 @@ export default function Sidebar({ sectors, sectorCounts = {}, onLinkClick }: Sid
         {/* Footer links */}
         <div className="mt-auto mx-3 border-t border-[#2a2a2a]" />
         <nav className="p-3 space-y-0.5">
-          <button
+          {!isGuest && <button
             onClick={() => setBugReportOpen(true)}
             className="flex items-center gap-2.5 px-2 py-2.5 sm:py-1.5 text-sm transition-colors w-full text-left text-[#a0a0a0] hover:text-white hover:bg-[#1a1a1a] border-l-2 border-transparent"
           >
             <span className="text-[#8a8a8a]"><Bug size={14} /></span>
             <span className="flex-1 truncate">Hata Bildir</span>
-          </button>
+          </button>}
           <SidebarLink href="/gizlilik" icon={<Shield size={14} />} label="Gizlilik" active={isActive('/gizlilik')} onClick={onLinkClick} />
           <SidebarLink href="/impressum" icon={<Info size={14} />} label="Impressum" active={isActive('/impressum')} onClick={onLinkClick} />
         </nav>

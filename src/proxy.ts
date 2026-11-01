@@ -56,6 +56,17 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password')
   const isLimboRoute = pathname.startsWith('/pending') || pathname.startsWith('/rejected')
   const isAdminRoute = pathname.startsWith('/admin')
+  // Pages guests may read without logging in. Writing pages (/topics/new, /settings,
+  // /notifications), profiles and admin stay members-only.
+  const isPublicReadRoute =
+    pathname === '/' ||
+    (pathname.startsWith('/topics/') && pathname !== '/topics/new') ||
+    pathname.startsWith('/sectors/') ||
+    pathname === '/announcements' ||
+    pathname === '/rules' ||
+    pathname === '/search' ||
+    pathname === '/gizlilik' ||
+    pathname === '/impressum'
 
   let user = null
   let lookupFailed = false
@@ -68,7 +79,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!user) {
-    if (isAuthRoute) return supabaseResponse
+    if (isAuthRoute || isPublicReadRoute) return supabaseResponse
 
     // The proxy is only an optimistic check — Next.js docs warn against using it
     // for real session management, and every layout re-verifies with getUser()

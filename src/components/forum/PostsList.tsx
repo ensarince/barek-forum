@@ -27,6 +27,8 @@ interface PostsListProps {
   currentUserId: string
   currentUsername: string
   currentAvatarUrl: string | null
+  /** Guest (not logged in): read only — no reply, react, vote, edit or delete */
+  readOnly?: boolean
 }
 
 export default function PostsList({
@@ -38,6 +40,7 @@ export default function PostsList({
   currentUserId,
   currentUsername,
   currentAvatarUrl,
+  readOnly = false,
 }: PostsListProps) {
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts)
   const [images, setImages] = useState<Record<string, ImageRow[]>>(initialImages)
@@ -154,6 +157,7 @@ export default function PostsList({
                     isReplying={replyingTo === post.id}
                     onEdit={updatePostContent}
                     onDelete={removePost}
+                    readOnly={readOnly}
                   />
 
                   {replyingTo === post.id && (
@@ -186,6 +190,7 @@ export default function PostsList({
                             isReplying={replyingTo === reply.id}
                             onEdit={updatePostContent}
                             onDelete={removePost}
+                            readOnly={readOnly}
                             nested
                           />
                           {replyingTo === reply.id && (
@@ -215,15 +220,29 @@ export default function PostsList({
         </>
       )}
 
-      {/* Top-level reply form */}
-      <ReplyForm
-        topicId={topicId}
-        parentPostId={null}
-        authorId={currentUserId}
-        authorUsername={currentUsername}
-        authorAvatarUrl={currentAvatarUrl}
-        onSuccess={addPost}
-      />
+      {/* Top-level reply form — guests get a login prompt instead */}
+      {readOnly ? (
+        <div className="mt-8 border-t border-[#2a2a2a] pt-6 text-center">
+          <p className="text-sm text-[#8a8a8a] mb-3">Yanıt yazmak, tepki vermek ve oylamak için giriş yap.</p>
+          <div className="flex items-center justify-center gap-2">
+            <Link href={`/login?next=/topics/${topicId}`} className="bg-[#8b1a1a] hover:bg-[#a82020] text-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors">
+              Giriş Yap
+            </Link>
+            <Link href="/signup" className="border border-[#2a2a2a] text-[#c8c8c8] hover:text-white hover:border-[#8a8a8a] px-5 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors">
+              Kayıt Ol
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <ReplyForm
+          topicId={topicId}
+          parentPostId={null}
+          authorId={currentUserId}
+          authorUsername={currentUsername}
+          authorAvatarUrl={currentAvatarUrl}
+          onSuccess={addPost}
+        />
+      )}
     </>
   )
 }
@@ -239,6 +258,7 @@ function PostCard({
   isReplying,
   onEdit,
   onDelete,
+  readOnly = false,
   nested = false,
 }: {
   post: PostWithAuthor
@@ -251,6 +271,7 @@ function PostCard({
   isReplying: boolean
   onEdit: (postId: string, newContent: string) => void
   onDelete: (postId: string) => void
+  readOnly?: boolean
   nested?: boolean
 }) {
   const [editing, setEditing] = useState(false)
@@ -260,7 +281,7 @@ function PostCard({
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const editRef = useRef<HTMLTextAreaElement>(null)
-  const isOwn = post.author_id === currentUserId
+  const isOwn = !readOnly && post.author_id === currentUserId
 
   if (post.is_deleted) {
     return (
@@ -393,6 +414,7 @@ function PostCard({
             question={postPoll.poll.question}
             initialVotes={postPoll.votes}
             initialUserVote={postPoll.userVote}
+            readOnly={readOnly}
           />
         </div>
       )}
@@ -404,19 +426,22 @@ function PostCard({
             targetType="post"
             initialReactions={postReactions}
             currentUsername={currentUsername}
+            readOnly={readOnly}
           />
         </div>
       )}
 
-      <div className="ml-7 sm:ml-8 mt-1">
-        <button
-          onClick={onReply}
-          aria-expanded={isReplying}
-          className={`-ml-2 px-2 py-2 text-xs transition-colors ${isReplying ? 'text-[#e05a4a]' : 'text-[#8a8a8a] hover:text-white'}`}
-        >
-          {isReplying ? '↩ İptal' : '↩ Yanıtla'}
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="ml-7 sm:ml-8 mt-1">
+          <button
+            onClick={onReply}
+            aria-expanded={isReplying}
+            className={`-ml-2 px-2 py-2 text-xs transition-colors ${isReplying ? 'text-[#e05a4a]' : 'text-[#8a8a8a] hover:text-white'}`}
+          >
+            {isReplying ? '↩ İptal' : '↩ Yanıtla'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

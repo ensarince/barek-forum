@@ -12,6 +12,8 @@ interface ReactionBarProps {
   targetType: 'topic' | 'post'
   initialReactions: ReactionGroup[]
   currentUsername: string
+  /** Guests see the reactions but can't add or remove any */
+  readOnly?: boolean
 }
 
 // Add or remove the current user's reaction for one emoji
@@ -33,7 +35,7 @@ function applyReaction(list: ReactionGroup[], emoji: string, add: boolean, usern
     : r)
 }
 
-export default function ReactionBar({ targetId, targetType, initialReactions, currentUsername }: ReactionBarProps) {
+export default function ReactionBar({ targetId, targetType, initialReactions, currentUsername, readOnly = false }: ReactionBarProps) {
   const [reactions, setReactions] = useState<ReactionGroup[]>(initialReactions)
   const [loading, setLoading] = useState<string | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -127,6 +129,8 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
     }
   }
 
+  if (readOnly && reactions.length === 0) return null
+
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
       {reactions.map(r => (
@@ -135,7 +139,7 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
             onClick={() => {
               // A long-press only shows the names, it doesn't toggle
               if (longPressed.current) { longPressed.current = false; return }
-              toggle(r.emoji)
+              if (!readOnly) toggle(r.emoji)
             }}
             onMouseEnter={() => setTooltip(r.emoji)}
             onMouseLeave={() => setTooltip(null)}
@@ -145,7 +149,8 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
             onContextMenu={(e) => e.preventDefault()}
             onBlur={() => setTooltip(null)}
             disabled={loading === r.emoji}
-            aria-pressed={r.userReacted}
+            aria-pressed={readOnly ? undefined : r.userReacted}
+            aria-disabled={readOnly || undefined}
             aria-label={`${r.emoji} ${r.count}${r.usernames.length ? ` — ${r.usernames.join(', ')}` : ''}`}
             className={`flex items-center gap-1 px-2.5 py-1.5 text-xs border transition-colors select-none disabled:opacity-50 ${
               r.userReacted
@@ -164,7 +169,7 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
         </div>
       ))}
 
-      <div className="relative" ref={pickerRef}>
+      {!readOnly && <div className="relative" ref={pickerRef}>
         <button
           onClick={() => { setTooltip(null); setPickerOpen(!pickerOpen) }}
           title="Tepki ekle"
@@ -189,7 +194,7 @@ export default function ReactionBar({ targetId, targetType, initialReactions, cu
             ))}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

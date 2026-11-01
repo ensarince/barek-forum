@@ -16,9 +16,11 @@ interface OpeningPostProps {
   currentUserId: string
   currentUsername: string
   initialReactions: ReactionGroup[]
+  /** Guest (not logged in): no reactions, no edit/delete */
+  readOnly?: boolean
 }
 
-export default function OpeningPost({ topic, images, currentUserId, currentUsername, initialReactions }: OpeningPostProps) {
+export default function OpeningPost({ topic, images, currentUserId, currentUsername, initialReactions, readOnly = false }: OpeningPostProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(topic.content)
@@ -28,7 +30,7 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const editRef = useRef<HTMLTextAreaElement>(null)
-  const isOwn = topic.author_id === currentUserId
+  const isOwn = !readOnly && topic.author_id === currentUserId
 
   async function saveEdit() {
     if (!editContent.trim()) return
@@ -158,6 +160,7 @@ export default function OpeningPost({ topic, images, currentUserId, currentUsern
             targetType="topic"
             initialReactions={initialReactions}
             currentUsername={currentUsername}
+            readOnly={readOnly}
           />
         </div>
       )}

@@ -51,14 +51,21 @@ export default async function TopicPage({ params }: PageProps) {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  // Guests (not logged in) can read — empty id means "no current user" everywhere below
+  const userId = user?.id ?? ''
 
   // Check if admin so they can preview pending/rejected topics
-  const { data: callerProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user!.id)
-    .single()
-  const isAdmin = (callerProfile as { role: string } | null)?.role === 'admin'
+  let isAdmin = false
+  let profile: Pick<Profile, 'id' | 'username' | 'avatar_url'> | null = null
+  if (user) {
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, role')
+      .eq('id', user.id)
+      .single()
+    isAdmin = (callerProfile as { role: string } | null)?.role === 'admin'
+    profile = callerProfile as Pick<Profile, 'id' | 'username' | 'avatar_url'> | null
+  }
 
   let topicQuery = supabase
     .from('topics')
@@ -111,15 +118,6 @@ export default async function TopicPage({ params }: PageProps) {
     }
   }
 
-  // Fetch current user profile for reply form
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('id, username, avatar_url')
-    .eq('id', user!.id)
-    .single()
-
-  const profile = profileData as Pick<Profile, 'id' | 'username' | 'avatar_url'> | null
-
   // Fetch topic-level poll + votes
   const { data: pollData } = await supabase
     .from('polls')
@@ -140,7 +138,7 @@ export default async function TopicPage({ params }: PageProps) {
     const votes = (votesData ?? []) as Pick<PollVote, 'grade' | 'user_id'>[]
     for (const v of votes) {
       pollVotes[v.grade] = (pollVotes[v.grade] ?? 0) + 1
-      if (v.user_id === user!.id) userVote = v.grade
+      if (v.user_id === userId) userVote = v.grade
     }
   }
 
@@ -175,7 +173,7 @@ export default async function TopicPage({ params }: PageProps) {
         let uv: string | null = null
         for (const v of pvotes) {
           voteCounts[v.grade] = (voteCounts[v.grade] ?? 0) + 1
-          if (v.user_id === user!.id) uv = v.grade
+          if (v.user_id === userId) uv = v.grade
         }
         initialPostPolls[p.post_id] = { poll: p, votes: voteCounts, userVote: uv }
       }
@@ -188,7 +186,7 @@ export default async function TopicPage({ params }: PageProps) {
     .select('emoji, user_id, profile:profiles(username)')
     .eq('topic_id', topicId)
     .is('post_id', null)
-  const topicReactions = groupReactions((topicReactionsRaw ?? []) as unknown as RawReaction[], user!.id)
+  const topicReactions = groupReactions((topicReactionsRaw ?? []) as unknown as RawReaction[], userId)
 
   // Fetch post reactions
   const initialPostReactions: Record<string, ReactionGroup[]> = {}
@@ -207,14 +205,16 @@ export default async function TopicPage({ params }: PageProps) {
       byPost.set(r.post_id, arr)
     }
     for (const [pid, arr] of byPost.entries()) {
-      initialPostReactions[pid] = groupReactions(arr, user!.id)
+      initialPostReactions[pid] = groupReactions(arr, userId)
     }
   }
 
-  // Mark as read
-  await supabase
-    .from('topic_reads')
-    .upsert({ user_id: user!.id, topic_id: topicId, last_read_at: new Date().toISOString() })
+  // Mark as read (members only)
+  if (user) {
+    await supabase
+      .from('topic_reads')
+      .upsert({ user_id: user.id, topic_id: topicId, last_read_at: new Date().toISOString() })
+  }
 
   return (
     <div className="max-w-3xl mx-auto py-4 sm:py-6 px-4">
@@ -222,9 +222,10 @@ export default async function TopicPage({ params }: PageProps) {
       <OpeningPost
         topic={topic}
         images={topicImages}
-        currentUserId={user!.id}
+        currentUserId={userId}
         currentUsername={profile?.username ?? 'bilinmiyor'}
         initialReactions={topicReactions}
+        readOnly={!user}
       />
       {poll && (
         <PollWidget
@@ -232,6 +233,7 @@ export default async function TopicPage({ params }: PageProps) {
           question={poll.question}
           initialVotes={pollVotes}
           initialUserVote={userVote}
+          readOnly={!user}
         />
       )}
       <PostsList
@@ -240,9 +242,10 @@ export default async function TopicPage({ params }: PageProps) {
         initialImages={initialImages}
         initialPostPolls={initialPostPolls}
         initialPostReactions={initialPostReactions}
-        currentUserId={user!.id}
+        currentUserId={userId}
         currentUsername={profile?.username ?? 'bilinmiyor'}
         currentAvatarUrl={profile?.avatar_url ?? null}
+        readOnly={!user}
       />
     </div>
   )

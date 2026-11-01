@@ -75,8 +75,24 @@ export default async function ForumLayout({ children }: { children: React.ReactN
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Middleware already redirects unauthenticated users; this is a safety fallback
-  if (!user) redirect('/login')
+  // Guests may read; the proxy keeps them off members-only pages
+  if (!user) {
+    const [{ data: guestSectors }, guestCounts] = await Promise.all([
+      supabase.from('sectors').select('*').order('order_index'),
+      getSectorTopicCounts(supabase),
+    ])
+    return (
+      <ForumShell
+        profile={null}
+        unreadCount={0}
+        sectors={(guestSectors ?? []) as Sector[]}
+        sectorCounts={guestCounts}
+        bannerIndex={bannerIndex}
+      >
+        {children}
+      </ForumShell>
+    )
+  }
 
   // A dropped request looks exactly like a missing profile row, which would send
   // an approved member to /pending ("hesabın onay bekliyor") and read to them as a
