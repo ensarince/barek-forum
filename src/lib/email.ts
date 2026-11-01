@@ -152,20 +152,6 @@ export async function emailUserRejected(userId: string, username: string) {
   `)
 }
 
-/** Admin: a new topic is awaiting approval */
-export async function emailAdminsNewTopic(adminIds: string[], authorUsername: string, topicTitle: string) {
-  const adminEmails = await getUserEmails(adminIds)
-  if (!adminEmails.length) return
-  const u = escapeHtml(authorUsername)
-  const t = escapeHtml(topicTitle)
-  await send(adminEmails, `Yeni konu onay bekliyor — ${authorUsername}`, `
-    ${p(`<strong style="color:#fff">${u}</strong> yeni bir konu paylaştı:`, '#e8e8e8')}
-    ${quote(t)}
-    ${p('Admin panelinden inceleyip onaylayabilirsin.')}
-    ${btn(`${SITE}/admin/topics`, 'Konuyu İncele')}
-  `)
-}
-
 /** User: their topic was approved */
 export async function emailUserTopicApproved(userId: string, username: string, topicTitle: string, topicId: string) {
   const email = await getUserEmail(userId)

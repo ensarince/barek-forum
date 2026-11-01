@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { Profile, Sector, Image as ImageRow } from '@/types/database'
-import { emailAdminsNewTopic, emailAllUsersAnnouncement } from '@/lib/email'
+import { emailAllUsersAnnouncement } from '@/lib/email'
 import { notifyTopicMentions } from '@/lib/mentions'
 import { isAllowedImage } from '@/lib/images'
 import { rateLimit } from '@/lib/rateLimit'
@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
       sector_id: isAnnouncement ? null : (sector_id ?? null),
       tag: isAnnouncement ? null : (tag?.trim() || null),
       type: isAnnouncement ? 'announcement' : 'discussion',
-      status: (isAnnouncement || profile.role === 'admin') ? 'approved' : 'pending',
+      // No topic moderation — topics go live right away; admins delete bad ones afterwards
+      status: 'approved',
       is_pinned: isAnnouncement,
     })
     .select('id')
@@ -146,38 +147,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Notify all admins of the pending topic (skip if the poster is already an admin)
-  if (!isAnnouncement && profile.role !== 'admin') {
-    const { data: adminProfiles } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'admin')
-    const adminIds = ((adminProfiles ?? []) as { id: string }[]).filter((a) => a.id !== user.id)
-    if (adminIds.length > 0) {
-      await service.from('notifications').insert(
-        adminIds.map((a) => ({
-          user_id: a.id,
-          type: 'topic_pending',
-          reference_id: topic.id,
-          is_read: false,
-        }))
-      )
-      // BUG 7 FIX: guard against empty username
-      await emailAdminsNewTopic(adminIds.map((a) => a.id), profile.username || 'kullanıcı', title.trim())
-    }
-  }
-
-  // @mentions notify only once the topic is live — pending topics get theirs on admin approval
-  const isImmediatelyApproved = isAnnouncement || profile.role === 'admin'
-  if (isImmediatelyApproved) {
-    await notifyTopicMentions({
-      topicId: topic.id,
-      title: title.trim(),
-      content: content.trim(),
-      authorId: user.id,
-      authorUsername: profile.username,
-    })
-  }
+  // Topics are live immediately, so @mentions notify right away
+  await notifyTopicMentions({
+    topicId: topic.id,
+    title: title.trim(),
+    content: content.trim(),
+    authorId: user.id,
+    authorUsername: profile.username,
+  })
 
   return NextResponse.json({ success: true, topicId: topic.id, images: savedImages })
 }

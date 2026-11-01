@@ -9,10 +9,9 @@ const GENERAL_TAGS = ['Genel', 'Soru', 'Beta', 'Ekipman', 'Güvenlik', 'Etkinlik
 
 interface NewTopicFormProps {
   sectors: Sector[]
-  isAdmin: boolean
 }
 
-export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
+export default function NewTopicForm({ sectors }: NewTopicFormProps) {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -24,7 +23,6 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
   const [withPoll, setWithPoll] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [submitted, setSubmitted] = useState(false)
 
   function selectGeneralTag(t: string) {
     setSectorId(null)
@@ -83,30 +81,14 @@ export default function NewTopicForm({ sectors, isAdmin }: NewTopicFormProps) {
         return
       }
 
-      if (isAdmin && resData.topicId) {
-        router.push(`/topics/${resData.topicId}`)
-        return
-      }
-
-      setSubmitted(true)
+      // Topics go live right away — open it
+      router.push(resData.topicId ? `/topics/${resData.topicId}` : '/')
     } catch {
       setError('Sunucuya bağlanılamadı.')
     } finally {
       setLoading(false)
       setUploadStatus(null)
     }
-  }
-
-  if (submitted) {
-    return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center">
-        <div className="text-[#e05a4a] text-4xl mb-4" aria-hidden="true">⧖</div>
-        <h1 className="text-lg font-bold text-white uppercase tracking-widest mb-2">Konu Gönderildi</h1>
-        <p className="text-[#8a8a8a] text-sm leading-relaxed">
-          Konun admin onayı bekliyor. Onaylandığında forumda yayınlanacak.
-        </p>
-      </div>
-    )
   }
 
   return (
